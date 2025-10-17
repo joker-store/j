@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>كشف حساب العميل</title>
+  <style>
+    body {
+      font-family: "Tahoma", sans-serif;
+      background: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      direction: rtl;
+    }
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 300px;
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #error {
+      color: red;
+      margin-top: 10px;
+    }
+    #result {
+      margin-top: 15px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>💰 كشف حساب العميل</h2>
+    <input id="username" placeholder="أدخل رقم اليوزر">
+    <button onclick="checkBalance()">عرض الرصيد</button>
+    <p id="error"></p>
+    <div id="result">
+      <p>👤 الاسم: <span id="name"></span></p>
+      <p>💵 الرصيد: <span id="balance"></span> جنيه</p>
+    </div>
+  </div>
+
+  <script>
+    let customers = {};
+
+    async function loadData() {
+      try {
+        const response = await fetch('customers.json?' + Date.now()); // منع الكاش
+        if (response.ok) {
+          customers = await response.json();
+        } else {
+          console.error("❌ لم يتم العثور على الملف");
+        }
+      } catch (error) {
+        console.error("❌ خطأ في تحميل البيانات", error);
+      }
+    }
+
+    function checkBalance() {
+      const user = document.getElementById('username').value.trim();
+      const error = document.getElementById('error');
+      const result = document.getElementById('result');
+
+      if (customers[user]) {
+        document.getElementById('name').innerText = customers[user].name;
+        document.getElementById('balance').innerText = customers[user].balance;
+        result.style.display = 'block';
+        error.innerText = '';
+      } else {
+        result.style.display = 'none';
+        error.innerText = '❌ الرقم غير موجود';
+      }
+    }
+
+    // تحميل البيانات أول ما الصفحة تفتح
+    loadData();
+    // تحديث تلقائي كل دقيقة
+    setInterval(loadData, 60000);
+  </script>
+</body>
+</html>
