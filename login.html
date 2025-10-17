@@ -92,22 +92,23 @@
         return;
       }
 
-      db.ref('clients').orderByChild('name').equalTo(name).once('value', snapshot => {
-        if (snapshot.exists()) {
-          let loggedIn = false;
-          snapshot.forEach(child => {
-            const user = child.val();
-            if (user.password && user.password.trim() === pass) {
-              localStorage.setItem('clientId', child.key);
-              localStorage.setItem('clientName', user.name);
-              window.location.href = "client.html";
-              loggedIn = true;
-            }
-          });
-          if (!loggedIn) errorDiv.innerText = "كلمة السر غير صحيحة!";
-        } else {
-          errorDiv.innerText = "الاسم غير موجود!";
-        }
+    db.ref('clients').orderByChild('name').equalTo(name).once('value', snapshot => {
+  if (snapshot.exists()) {
+    const clientKey = Object.keys(snapshot.val())[0];
+    const user = snapshot.val()[clientKey];
+
+    if (user.password && user.password.trim() === pass) {
+      localStorage.setItem('clientId', clientKey);
+      localStorage.setItem('clientName', user.name);
+      window.location.href = "client.html"; // التحويل هنا
+    } else {
+      errorDiv.innerText = "كلمة السر غير صحيحة!";
+    }
+  } else {
+    errorDiv.innerText = "الاسم غير موجود!";
+  }
+});
+
       }, error => {
         console.error(error);
         errorDiv.innerText = "خطأ في الاتصال بقاعدة البيانات";
@@ -116,3 +117,4 @@
   </script>
 </body>
 </html>
+
