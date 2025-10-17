@@ -1,116 +1,107 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تسجيل دخول العميل</title>
-  <style>
-    body {
-      font-family: Tahoma;
-      direction: rtl;
-      text-align: center;
-      background: linear-gradient(to bottom, #4facfe, #00f2fe);
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .box {
-      background: white;
-      padding: 20px;
-      border-radius: 15px;
-      width: 90%;
-      max-width: 350px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    input {
-      margin: 10px 0;
-      padding: 12px;
-      width: 95%;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      padding: 12px;
-      width: 95%;
-      background: #2196f3;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #1976d2;
-    }
-    #error {
-      color: red;
-      margin-top: 10px;
-      min-height: 20px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل دخول العميل</title>
+<style>
+body {
+  font-family: Tahoma;
+  direction: rtl;
+  text-align: center;
+  background: linear-gradient(to bottom, #4facfe, #00f2fe);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.box {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 350px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+input {
+  margin: 10px 0;
+  padding: 12px;
+  width: 95%;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+button {
+  padding: 12px;
+  width: 95%;
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+button:hover {
+  background: #1976d2;
+}
+#error {
+  color: red;
+  margin-top: 10px;
+  min-height: 20px;
+}
+</style>
 </head>
 <body>
-  <div class="box">
-    <h2>تسجيل دخول</h2>
-    <input type="text" id="username" placeholder="الاسم">
-    <input type="password" id="password" placeholder="كلمة السر">
-    <button id="loginBtn">دخول</button>
-    <div id="error"></div>
-  </div>
+<div class="box">
+  <h2>تسجيل دخول</h2>
+  <input type="text" id="username" placeholder="الاسم">
+  <button id="loginBtn">دخول</button>
+  <div id="error"></div>
+</div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
-      authDomain: "ahmed-77878.firebaseapp.com",
-      databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "ahmed-77878",
-      storageBucket: "ahmed-77878.firebasestorage.app",
-      messagingSenderId: "566732207368",
-      appId: "1:566732207368:web:d88477f62ecf475e2628bd"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
+  authDomain: "ahmed-77878.firebaseapp.com",
+  databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ahmed-77878",
+  storageBucket: "ahmed-77878.firebasestorage.app",
+  messagingSenderId: "566732207368",
+  appId: "1:566732207368:web:d88477f62ecf475e2628bd"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    document.getElementById('loginBtn').addEventListener('click', login);
+document.getElementById('loginBtn').addEventListener('click', login);
 
-    function login() {
-      console.log("تم الضغط على دخول");
-      const name = document.getElementById('username').value.trim();
-      const pass = document.getElementById('password').value.trim();
-      const errorDiv = document.getElementById('error');
+function login() {
+  const name = document.getElementById('username').value.trim();
+  const errorDiv = document.getElementById('error');
 
-      if (!name || !pass) {
-        errorDiv.innerText = "أدخل الاسم وكلمة السر";
-        return;
-      }
-
-    db.ref('clients').orderByChild('name').equalTo(name).once('value', snapshot => {
-  if (snapshot.exists()) {
-    const clientKey = Object.keys(snapshot.val())[0];
-    const user = snapshot.val()[clientKey];
-
-    if (user.password && user.password.trim() === pass) {
-      localStorage.setItem('clientId', clientKey);
-      localStorage.setItem('clientName', user.name);
-      window.location.href = "client.html"; // التحويل هنا
-    } else {
-      errorDiv.innerText = "كلمة السر غير صحيحة!";
-    }
-  } else {
-    errorDiv.innerText = "الاسم غير موجود!";
+  if (!name) {
+    errorDiv.innerText = "أدخل الاسم";
+    return;
   }
-});
+
+  db.ref('clients').orderByChild('name').equalTo(name).once('value', snapshot => {
+    if (snapshot.exists()) {
+      const clientKey = Object.keys(snapshot.val())[0];
+      localStorage.setItem('clientId', clientKey);
+      localStorage.setItem('clientName', name);
+      window.location.href = "client.html";
+    } else {
+      errorDiv.innerText = "الاسم غير موجود!";
     }
-  </script>
+  }, error => {
+    console.error(error);
+    errorDiv.innerText = "خطأ في الاتصال بقاعدة البيانات";
+  });
+}
+</script>
 </body>
 </html>
-
-
