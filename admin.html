@@ -12,7 +12,7 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-image: url('YOUR_BACKGROUND.jpg'); /* ضع الخلفية المناسبة */
+  background-image: url('YOUR_BACKGROUND.jpg');
   background-size: cover;
   background-position: center;
   color: #fff;
@@ -74,7 +74,6 @@ button {
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
 <script>
-// إعداد Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
   authDomain: "ahmed-77878.firebaseapp.com",
@@ -89,14 +88,14 @@ const db = firebase.database();
 
 const paymentsTable = document.querySelector('#paymentsTable tbody');
 
-// Realtime Listener لكل العملاء والتحويلات
+// Listener فوري لكل العملاء والتحويلات
 db.ref('clients').on('child_added', clientSnap => {
   const clientId = clientSnap.key;
   const clientName = clientSnap.val().name;
 
   db.ref(`clients/${clientId}/payments`).on('child_added', paymentSnap => {
     const payment = paymentSnap.val();
-    if (payment.confirmed) return; // فقط التحويلات الجديدة
+    if (payment.confirmed) return; // تجاهل المؤكد
 
     const tr = document.createElement('tr');
     tr.id = `row-${clientId}-${paymentSnap.key}`;
@@ -115,7 +114,7 @@ db.ref('clients').on('child_added', clientSnap => {
     paymentsTable.appendChild(tr);
   });
 
-  // Listener للتحديثات إذا تم تأكيد أو تعديل التحويل
+  // Listener لتحديث الصفوف عند التأكيد أو التعديل
   db.ref(`clients/${clientId}/payments`).on('child_changed', paymentSnap => {
     const tr = document.getElementById(`row-${clientId}-${paymentSnap.key}`);
     if (tr) tr.remove(); // إزالة الصف إذا تم التأكيد
