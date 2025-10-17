@@ -43,7 +43,6 @@ h1 { font-size: 2.5em; color: green; margin: 10px 0; }
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-// إعداد Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
   authDomain: "ahmed-77878.firebaseapp.com",
@@ -66,7 +65,6 @@ if (!clientId) {
 
 document.getElementById('clientName').innerText = clientName;
 
-// حساب الرصيد
 db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
   let total = 0;
   snapshot.forEach(child => {
