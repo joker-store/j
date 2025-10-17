@@ -26,7 +26,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
-    // إعداد Firebase (نفس الإعداد بتاع الموقع القديم)
+    // إعداد Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
       authDomain: "ahmed-77878.firebaseapp.com",
@@ -43,18 +43,26 @@
       const name = document.getElementById('username').value.trim();
       const pass = document.getElementById('password').value.trim();
 
+      if (!name || !pass) {
+        document.getElementById('error').innerText = "أدخل الاسم وكلمة السر";
+        return;
+      }
+
       db.ref('clients').orderByChild('name').equalTo(name).once('value', snapshot => {
         if (snapshot.exists()) {
+          let loggedIn = false;
           snapshot.forEach(child => {
             const user = child.val();
-            if (user.password === pass) {
+            if (user.password.trim() === pass) {
               localStorage.setItem('clientId', child.key);
               localStorage.setItem('clientName', user.name);
               window.location.href = "client.html";
-            } else {
-              document.getElementById('error').innerText = "كلمة السر غير صحيحة!";
+              loggedIn = true;
             }
           });
+          if (!loggedIn) {
+            document.getElementById('error').innerText = "كلمة السر غير صحيحة!";
+          }
         } else {
           document.getElementById('error').innerText = "الاسم غير موجود!";
         }
