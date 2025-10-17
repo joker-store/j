@@ -15,7 +15,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url('YOUR_BACKGROUND.jpg'); /* حط الخلفية هنا */
+  background-image: url('YOUR_BACKGROUND.jpg'); /* ضع الخلفية هنا */
   background-size: cover;
   background-position: center;
 }
@@ -81,10 +81,11 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// كلمات السر المخزنة في الكود
+// الباسوردات مخزنة في الصفحة نفسها
 const passwords = {
-  "اكينو": "1234",
-  "زوز": "2222"
+  "أحمد علي": "1234",
+  "محمد حسن": "2222",
+  "حسن": "7777"
 };
 
 document.getElementById('loginBtn').addEventListener('click', login);
@@ -99,24 +100,28 @@ function login() {
     return;
   }
 
-  // التحقق من الباسورد المخزن في الكود
-  if (passwords[name] && passwords[name] === pass) {
-    // البحث عن العميل في Firebase
-    db.ref('clients').orderByChild('name').equalTo(name).once('value', snapshot => {
-      if (snapshot.exists()) {
-        const clientKey = Object.keys(snapshot.val())[0];
-        localStorage.setItem('clientId', clientKey);
-        localStorage.setItem('clientName', name);
-        window.location.href = "client.html";
-      } else {
-        errorDiv.innerText = "الاسم غير موجود في النظام";
-      }
-    });
-  } else {
-    errorDiv.innerText = "كلمة السر غير صحيحة!";
+  // تحقق الباسورد من الصفحة فقط
+  if (!passwords[name]) {
+    errorDiv.innerText = "الاسم غير موجود!";
+    return;
   }
+  if (passwords[name] !== pass) {
+    errorDiv.innerText = "كلمة السر غير صحيحة!";
+    return;
+  }
+
+  // البحث عن العميل في Firebase للرصيد فقط
+  db.ref('clients').orderByChild('name').equalTo(name).once('value', snapshot => {
+    if (snapshot.exists()) {
+      const clientKey = Object.keys(snapshot.val())[0];
+      localStorage.setItem('clientId', clientKey);
+      localStorage.setItem('clientName', name);
+      window.location.href = "client.html";
+    } else {
+      errorDiv.innerText = "الاسم موجود في الصفحة لكن غير موجود في النظام";
+    }
+  });
 }
 </script>
 </body>
 </html>
-
