@@ -1,77 +1,76 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>رصيد العميل</title>
-  <style>
-    body {
-      font-family: Tahoma;
-      direction: rtl;
-      text-align: center;
-      background: linear-gradient(to bottom, #43e97b, #38f9d7);
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .box {
-      background: white;
-      padding: 20px;
-      border-radius: 15px;
-      width: 90%;
-      max-width: 350px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    h2 { margin-bottom: 20px; font-size: 1.5em; }
-    h3 { margin: 10px 0; font-size: 1.2em; }
-    h1 { font-size: 2.5em; color: green; margin: 10px 0; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>رصيد العميل</title>
+<style>
+body {
+  font-family: Tahoma;
+  direction: rtl;
+  text-align: center;
+  background: linear-gradient(to bottom, #43e97b, #38f9d7);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.box {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 350px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+h2 { margin-bottom: 20px; font-size: 1.5em; }
+h3 { margin: 10px 0; font-size: 1.2em; }
+h1 { font-size: 2.5em; color: green; margin: 10px 0; }
+</style>
 </head>
 <body>
-  <div class="box">
-    <h2>أهلاً <span id="clientName"></span></h2>
-    <h3>رصيدك الحالي:</h3>
-    <h1><span id="balance">0</span> جنيه</h1>
-  </div>
+<div class="box">
+  <h2>أهلاً <span id="clientName"></span></h2>
+  <h3>رصيدك الحالي:</h3>
+  <h1><span id="balance">0</span> جنيه</h1>
+</div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
-      authDomain: "ahmed-77878.firebaseapp.com",
-      databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "ahmed-77878",
-      storageBucket: "ahmed-77878.firebasestorage.app",
-      messagingSenderId: "566732207368",
-      appId: "1:566732207368:web:d88477f62ecf475e2628bd"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
+  authDomain: "ahmed-77878.firebaseapp.com",
+  databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ahmed-77878",
+  storageBucket: "ahmed-77878.firebasestorage.app",
+  messagingSenderId: "566732207368",
+  appId: "1:566732207368:web:d88477f62ecf475e2628bd"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    const clientId = localStorage.getItem('clientId');
-    const clientName = localStorage.getItem('clientName');
+const clientId = localStorage.getItem('clientId');
+const clientName = localStorage.getItem('clientName');
 
-    if (!clientId) {
-      alert("الرجاء تسجيل الدخول أولاً");
-      window.location.href = "login.html";
-    }
+if (!clientId) {
+  alert("الرجاء تسجيل الدخول أولاً");
+  window.location.href = "login.html";
+}
 
-    document.getElementById('clientName').innerText = clientName;
+document.getElementById('clientName').innerText = clientName;
 
-    db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
-      let total = 0;
-      snapshot.forEach(child => {
-        const amount = parseFloat(child.val().amount);
-        if (!isNaN(amount)) total += amount;
-      });
-      document.getElementById('balance').innerText = total;
-    });
-  </script>
+db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
+  let total = 0;
+  snapshot.forEach(child => {
+    const amount = parseFloat(child.val().amount);
+    if (!isNaN(amount)) total += amount;
+  });
+  document.getElementById('balance').innerText = total;
+});
+</script>
 </body>
 </html>
