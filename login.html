@@ -9,16 +9,18 @@ body {
   font-family: Tahoma;
   direction: rtl;
   text-align: center;
-  background: linear-gradient(to bottom, #4facfe, #00f2fe);
   margin: 0;
   padding: 0;
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  background-image: url('YOUR_BACKGROUND.jpg'); /* هنا تحط اسم الصورة الخاصة بالخلفية */
+  background-size: cover;
+  background-position: center;
 }
 .box {
-  background: white;
+  background: rgba(255,255,255,0.9);
   padding: 20px;
   border-radius: 15px;
   width: 90%;
@@ -57,6 +59,7 @@ button:hover {
 <div class="box">
   <h2>تسجيل دخول</h2>
   <input type="text" id="username" placeholder="الاسم">
+  <input type="password" id="password" placeholder="كلمة السر">
   <button id="loginBtn">دخول</button>
   <div id="error"></div>
 </div>
@@ -77,30 +80,44 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+let allClients = {};
+db.ref('clients').once('value', snapshot => {
+  allClients = snapshot.val() || {};
+});
+
 document.getElementById('loginBtn').addEventListener('click', login);
 
 function login() {
   const name = document.getElementById('username').value.trim();
+  const pass = document.getElementById('password').value.trim();
   const errorDiv = document.getElementById('error');
 
-  if (!name) {
-    errorDiv.innerText = "أدخل الاسم";
+  if (!name || !pass) {
+    errorDiv.innerText = "أدخل الاسم وكلمة السر";
     return;
   }
 
-  db.ref('clients').orderByChild('name').equalTo(name).once('value', snapshot => {
-    if (snapshot.exists()) {
-      const clientKey = Object.keys(snapshot.val())[0];
-      localStorage.setItem('clientId', clientKey);
-      localStorage.setItem('clientName', name);
-      window.location.href = "client.html";
-    } else {
-      errorDiv.innerText = "الاسم غير موجود!";
+  let found = false;
+  for (let key in allClients) {
+    if (allClients[key].name.trim() === name) {
+      const clientPass = allClients[key].password ? allClients[key].password.trim() : "";
+      if (pass === clientPass) {
+        localStorage.setItem('clientId', key);
+        localStorage.setItem('clientName', name);
+        window.location.href = "client.html";
+        found = true;
+        break;
+      } else {
+        errorDiv.innerText = "كلمة السر غير صحيحة!";
+        found = true;
+        break;
+      }
     }
-  }, error => {
-    console.error(error);
-    errorDiv.innerText = "خطأ في الاتصال بقاعدة البيانات";
-  });
+  }
+
+  if (!found) {
+    errorDiv.innerText = "الاسم غير موجود!";
+  }
 }
 </script>
 </body>
