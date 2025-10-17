@@ -2,104 +2,68 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>كشف حساب العميل</title>
+  <title>استعلام الرصيد</title>
   <style>
-    body {
-      font-family: "Tahoma", sans-serif;
-      background: #f2f2f2;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      direction: rtl;
-    }
-    .card {
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 300px;
-      text-align: center;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      text-align: center;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 5px;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    #error {
-      color: red;
-      margin-top: 10px;
-    }
-    #result {
-      margin-top: 15px;
-      display: none;
-    }
+    body { font-family: Tahoma; text-align: center; padding: 50px; background: #f8f8f8; }
+    input { padding: 10px; margin: 5px; }
+    button { padding: 10px 20px; }
+    #balanceBox { display: none; background: white; padding: 20px; margin-top: 20px; border-radius: 10px; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>💰 كشف حساب العميل</h2>
-    <input id="username" placeholder="أدخل رقم اليوزر">
-    <button onclick="checkBalance()">عرض الرصيد</button>
-    <p id="error"></p>
-    <div id="result">
-      <p>👤 الاسم: <span id="name"></span></p>
-      <p>💵 الرصيد: <span id="balance"></span> جنيه</p>
-    </div>
+
+  <h2>تسجيل الدخول</h2>
+  <input type="text" id="username" placeholder="اسم المستخدم"><br>
+  <input type="password" id="password" placeholder="كلمة المرور"><br>
+  <button onclick="login()">دخول</button>
+  <p id="error" style="color:red"></p>
+
+  <div id="balanceBox">
+    <h3>أهلاً <span id="clientName"></span></h3>
+    <h2>رصيدك الحالي: <span id="balance"></span> ج.م</h2>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script>
-    let customers = {};
+    const firebaseConfig = {
+      apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
+      authDomain: "ahmed-77878.firebaseapp.com",
+      databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "ahmed-77878",
+      storageBucket: "ahmed-77878.firebasestorage.app",
+      messagingSenderId: "566732207368",
+      appId: "1:566732207368:web:d88477f62ecf475e2628bd",
+      measurementId: "G-NTBFNP3PLF"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    async function loadData() {
-      try {
-        const response = await fetch('customers.json?' + Date.now()); // منع الكاش
-        if (response.ok) {
-          customers = await response.json();
-        } else {
-          console.error("❌ لم يتم العثور على الملف");
-        }
-      } catch (error) {
-        console.error("❌ خطأ في تحميل البيانات", error);
-      }
+    async function login() {
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+
+      // هنجيب بيانات اليوزر من جدول users الجديد
+      const snapshot = await db.ref('users/' + user).once('value');
+      if (!snapshot.exists()) return document.getElementById('error').innerText = 'المستخدم غير موجود';
+
+      const data = snapshot.val();
+      if (data.password !== pass) return document.getElementById('error').innerText = 'كلمة المرور خطأ';
+
+      // ✅ لو الدخول صحيح نعرض الرصيد من debts
+      document.getElementById('error').innerText = '';
+      document.getElementById('clientName').innerText = data.name;
+      document.getElementById('balanceBox').style.display = 'block';
+
+      // حساب الرصيد من مجلد clients
+      const debtsSnap = await db.ref('clients/' + data.id + '/debts').once('value');
+      let total = 0;
+      debtsSnap.forEach(child => {
+        const debt = child.val();
+        total += parseFloat(debt.amount);
+      });
+      document.getElementById('balance').innerText = total;
     }
-
-    function checkBalance() {
-      const user = document.getElementById('username').value.trim();
-      const error = document.getElementById('error');
-      const result = document.getElementById('result');
-
-      if (customers[user]) {
-        document.getElementById('name').innerText = customers[user].name;
-        document.getElementById('balance').innerText = customers[user].balance;
-        result.style.display = 'block';
-        error.innerText = '';
-      } else {
-        result.style.display = 'none';
-        error.innerText = '❌ الرقم غير موجود';
-      }
-    }
-
-    // تحميل البيانات أول ما الصفحة تفتح
-    loadData();
-    // تحديث تلقائي كل دقيقة
-    setInterval(loadData, 60000);
   </script>
 </body>
 </html>
