@@ -17,7 +17,7 @@
     <h2>تسجيل دخول</h2>
     <input type="text" id="username" placeholder="الاسم">
     <input type="password" id="password" placeholder="كلمة السر">
-    <button onclick="login()">دخول</button>
+    <button id="loginBtn">دخول</button>
     <div id="error"></div>
   </div>
 
@@ -39,12 +39,17 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    document.getElementById('loginBtn').addEventListener('click', login);
+
     function login() {
+      console.log("تم الضغط على دخول"); // للتأكد أن الزر شغال
+
       const name = document.getElementById('username').value.trim();
       const pass = document.getElementById('password').value.trim();
+      const errorDiv = document.getElementById('error');
 
       if (!name || !pass) {
-        document.getElementById('error').innerText = "أدخل الاسم وكلمة السر";
+        errorDiv.innerText = "أدخل الاسم وكلمة السر";
         return;
       }
 
@@ -61,11 +66,14 @@
             }
           });
           if (!loggedIn) {
-            document.getElementById('error').innerText = "كلمة السر غير صحيحة!";
+            errorDiv.innerText = "كلمة السر غير صحيحة!";
           }
         } else {
-          document.getElementById('error').innerText = "الاسم غير موجود!";
+          errorDiv.innerText = "الاسم غير موجود!";
         }
+      }, error => {
+        console.error(error);
+        errorDiv.innerText = "خطأ في الاتصال بقاعدة البيانات";
       });
     }
   </script>
