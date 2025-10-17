@@ -8,62 +8,73 @@
 body {
   font-family: Tahoma, sans-serif;
   direction: rtl;
+  text-align: center;
   margin: 0;
-  padding: 20px;
-  background-image: url('YOUR_BACKGROUND.jpg'); /* الخلفية هنا */
+  padding: 0;
+  min-height: 100vh;
+  background-image: url('admin_background.jpg'); /* ضع خلفيتك هنا */
   background-size: cover;
   background-position: center;
+  color: #fff;
 }
-h2 { text-align: center; margin-bottom: 20px; color: white; }
+.container {
+  background: rgba(0,0,0,0.5);
+  padding: 20px;
+  border-radius: 15px;
+  margin: 20px auto;
+  width: 95%;
+  max-width: 1000px;
+}
+h2 { margin-bottom: 20px; }
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 20px;
-  background: rgba(255,255,255,0.1);
+  margin-top: 10px;
 }
 th, td {
-  border: 1px solid #ddd;
-  padding: 10px;
+  border: 1px solid #fff;
+  padding: 8px;
   text-align: center;
-  color: #fff;
 }
-th { background-color: rgba(0,0,0,0.5); }
-td img { width: 80px; height: auto; border-radius: 5px; }
+th { background-color: rgba(255,255,255,0.2); }
+img { max-width: 80px; border-radius: 10px; }
 button {
   padding: 5px 10px;
+  margin: 2px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
 }
 .confirm-btn { background-color: #28a745; color: white; }
-.confirm-btn:hover { background-color: #218838; }
 .delete-btn { background-color: #dc3545; color: white; }
-.delete-btn:hover { background-color: #c82333; }
 </style>
 </head>
 <body>
 
-<h2>لوحة الإدارة - التحويلات الجديدة</h2>
-
-<table>
-  <thead>
-    <tr>
-      <th>اسم العميل</th>
-      <th>طريقة الدفع</th>
-      <th>رقم الهاتف</th>
-      <th>المبلغ</th>
-      <th>الصورة</th>
-      <th>التاريخ</th>
-      <th>إجراءات</th>
-    </tr>
-  </thead>
-  <tbody id="paymentsTable"></tbody>
-</table>
+<div class="container">
+  <h2>لوحة الإدارة - التحويلات الجديدة</h2>
+  <table id="paymentsTable">
+    <thead>
+      <tr>
+        <th>اسم العميل</th>
+        <th>طريقة الدفع</th>
+        <th>رقم الهاتف المحول منه</th>
+        <th>المبلغ</th>
+        <th>الصورة</th>
+        <th>التاريخ</th>
+        <th>إجراءات</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
 <script>
+// إعداد Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
   authDomain: "ahmed-77878.firebaseapp.com",
@@ -76,7 +87,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const paymentsTable = document.getElementById('paymentsTable');
+// جلب جميع العملاء وتحويلاتهم
+const paymentsTable = document.querySelector('#paymentsTable tbody');
 
 db.ref('clients').on('value', snapshot => {
   paymentsTable.innerHTML = '';
@@ -87,15 +99,17 @@ db.ref('clients').on('value', snapshot => {
     db.ref(`clients/${clientId}/payments`).on('value', paymentsSnap => {
       paymentsSnap.forEach(paymentSnap => {
         const payment = paymentSnap.val();
+        const tr = document.createElement('tr');
+
+        // فقط التحويلات غير المؤكدة تظهر
         if (payment.confirmed) return;
 
-        const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${clientName}</td>
           <td>${payment.method}</td>
           <td>${payment.senderPhone}</td>
           <td>${payment.amount}</td>
-          <td>${payment.imageURL ? `<img src="${payment.imageURL}" alt="صورة التحويل">` : ''}</td>
+          <td>${payment.imageURL ? `<img src="${payment.imageURL}" />` : ''}</td>
           <td>${payment.date}</td>
           <td>
             <button class="confirm-btn" onclick="confirmPayment('${clientId}','${paymentSnap.key}')">تأكيد</button>
@@ -108,18 +122,20 @@ db.ref('clients').on('value', snapshot => {
   });
 });
 
+// تأكيد التحويل
 function confirmPayment(clientId, paymentId) {
   db.ref(`clients/${clientId}/payments/${paymentId}`).update({ confirmed: true })
-    .then(() => alert('تم تأكيد الدفع!'));
+    .then(() => alert('تم التأكيد!'))
+    .catch(err => console.error(err));
 }
 
+// حذف التحويل
 function deletePayment(clientId, paymentId) {
-  if (!confirm('هل تريد حذف هذا التحويل؟')) return;
   db.ref(`clients/${clientId}/payments/${paymentId}`).remove()
-    .then(() => alert('تم حذف التحويل!'));
+    .then(() => alert('تم الحذف!'))
+    .catch(err => console.error(err));
 }
 </script>
 
 </body>
 </html>
-
