@@ -6,7 +6,7 @@
 <title>رصيد العميل</title>
 <style>
 body {
-  font-family: Tahoma;
+  font-family: Tahoma, sans-serif;
   direction: rtl;
   text-align: center;
   margin: 0;
@@ -15,28 +15,72 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url('YOUR_BACKGROUND.jpg'); /* نفس الخلفية أو مختلفة */
+  background-image: url('YOUR_BACKGROUND.jpg'); /* ضع الخلفية هنا */
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
 }
 .box {
-  background: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.1); /* شفافة */
   padding: 20px;
   border-radius: 15px;
   width: 90%;
   max-width: 350px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
-h2 { margin-bottom: 20px; font-size: 1.5em; }
-h3 { margin: 10px 0; font-size: 1.2em; }
+h2 { margin-bottom: 15px; font-size: 1.5em; color: #fff; }
+h3 { margin: 10px 0; font-size: 1.2em; color: #fff; }
 h1 { font-size: 2.5em; color: green; margin: 10px 0; }
+
+/* أزرار الدفع */
+.payment-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+}
+.payment-buttons button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border: 2px solid white;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 14px;
+  color: white;
+  background: rgba(255,255,255,0.1); /* شفافة */
+  transition: transform 0.2s, background 0.2s;
+}
+.payment-buttons button:hover {
+  transform: scale(1.05);
+  background: rgba(255,255,255,0.2);
+}
+.payment-buttons img {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 10px;
+}
 </style>
 </head>
 <body>
 <div class="box">
-  <h2>أهلاً <span id="clientName"></span></h2>
+  <h2 id="clientName">اسم العميل</h2>
   <h3>رصيدك الحالي:</h3>
   <h1><span id="balance">0</span> جنيه</h1>
+
+  <div class="payment-buttons">
+    <button onclick="goPayment('fcash')">
+      <img src="fcash_icon.png" alt="فودافون كاش">
+      فودافون كاش
+    </button>
+
+    <button onclick="goPayment('instapay')">
+      <img src="instapay_icon.png" alt="Instapay">
+      Instapay
+    </button>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -65,6 +109,7 @@ if (!clientId) {
 
 document.getElementById('clientName').innerText = clientName;
 
+// حساب الرصيد من الديون
 db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
   let total = 0;
   snapshot.forEach(child => {
@@ -73,6 +118,11 @@ db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
   });
   document.getElementById('balance').innerText = total;
 });
+
+function goPayment(method) {
+  localStorage.setItem('paymentMethod', method);
+  window.location.href = "payment.html"; // الانتقال لصفحة الدفع
+}
 </script>
 </body>
 </html>
