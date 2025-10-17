@@ -10,20 +10,24 @@ body {
   direction: rtl;
   margin: 0;
   padding: 20px;
-  background-color: #f0f2f5;
+  background-image: url('admin_background.jpg'); /* الخلفية هنا */
+  background-size: cover;
+  background-position: center;
 }
-h2 { text-align: center; margin-bottom: 20px; }
+h2 { text-align: center; margin-bottom: 20px; color: white; }
 table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 20px;
+  background: rgba(255,255,255,0.1);
 }
 th, td {
   border: 1px solid #ddd;
   padding: 10px;
   text-align: center;
+  color: #fff;
 }
-th { background-color: #333; color: white; }
+th { background-color: rgba(0,0,0,0.5); }
 td img { width: 80px; height: auto; border-radius: 5px; }
 button {
   padding: 5px 10px;
@@ -74,7 +78,6 @@ const db = firebase.database();
 
 const paymentsTable = document.getElementById('paymentsTable');
 
-// جلب كل العملاء
 db.ref('clients').on('value', snapshot => {
   paymentsTable.innerHTML = '';
   snapshot.forEach(clientSnap => {
@@ -84,7 +87,7 @@ db.ref('clients').on('value', snapshot => {
     db.ref(`clients/${clientId}/payments`).on('value', paymentsSnap => {
       paymentsSnap.forEach(paymentSnap => {
         const payment = paymentSnap.val();
-        if (payment.confirmed) return; // تجاهل المحولات المؤكدة
+        if (payment.confirmed) return;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
