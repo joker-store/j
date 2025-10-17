@@ -15,7 +15,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url('YOUR_BACKGROUND.jpg'); /* ضع الخلفية هنا */
+  background-image: url('payment_background.jpg');
   background-size: cover;
   background-position: center;
 }
@@ -43,6 +43,7 @@ button {
   transition: 0.2s;
 }
 button:hover { background-color: #218838; }
+#loadingMsg { color: white; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -55,6 +56,7 @@ button:hover { background-color: #218838; }
   <input type="number" id="amount" placeholder="المبلغ المحول" required>
   <input type="file" id="transferImage" accept="image/*">
   <button onclick="submitPayment()">إرسال</button>
+  <p id="loadingMsg"></p>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -84,47 +86,4 @@ function submitPayment() {
   const amount = parseFloat(document.getElementById('amount').value);
   const imageFile = document.getElementById('transferImage').files[0];
 
-  if (!senderPhone || !amount) return alert("ادخل جميع البيانات المطلوبة!");
-
-  const paymentRef = db.ref(`clients/${clientId}/payments`).push();
-  const paymentData = {
-    method: paymentMethod,
-    senderPhone: senderPhone,
-    amount: amount,
-    date: new Date().toLocaleString(),
-    confirmed: false
-  };
-
-  if (imageFile) {
-    const storageRef = storage.ref(`payments/${clientId}/${paymentRef.key}_${imageFile.name}`);
-    storageRef.put(imageFile)
-      .then(snapshot => snapshot.ref.getDownloadURL())
-      .then(url => {
-        paymentData.imageURL = url;
-        return paymentRef.set(paymentData);
-      })
-      .then(() => {
-        alert("تم إرسال التحويل بنجاح!");
-        window.location.href = "client.html";
-      })
-      .catch(err => {
-        console.error('Error uploading:', err);
-        alert("حدث خطأ في رفع الصورة!");
-      });
-  } else {
-    paymentRef.set(paymentData)
-      .then(() => {
-        alert("تم إرسال التحويل بنجاح!");
-        window.location.href = "client.html";
-      })
-      .catch(err => {
-        console.error('Error saving data:', err);
-        alert("حدث خطأ في تسجيل التحويل!");
-      });
-  }
-}
-</script>
-
-</body>
-</html>
-
+  if (!senderPhone || !amount) return alert("اد
