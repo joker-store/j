@@ -3,29 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>إدارة المدفوعات</title>
+<title>لوحة الإدارة - التحويلات</title>
 <style>
-body { font-family: Tahoma; direction: rtl; padding: 20px; }
-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-th { background: #2196f3; color: white; }
-button { padding: 6px 10px; border-radius: 5px; border: none; cursor: pointer; margin: 2px; }
-.confirm { background: green; color: white; }
-.delete { background: red; color: white; }
-img { max-width: 100px; }
+body {
+  font-family: Tahoma, sans-serif;
+  direction: rtl;
+  margin: 0;
+  padding: 20px;
+  background-color: #f0f2f5;
+}
+h2 { text-align: center; margin-bottom: 20px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+th, td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+th { background-color: #333; color: white; }
+td img { width: 80px; height: auto; border-radius: 5px; }
+button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.confirm-btn { background-color: #28a745; color: white; }
+.confirm-btn:hover { background-color: #218838; }
+.delete-btn { background-color: #dc3545; color: white; }
+.delete-btn:hover { background-color: #c82333; }
 </style>
 </head>
 <body>
-<h2>طلبات التحويل المؤقتة</h2>
+
+<h2>لوحة الإدارة - التحويلات الجديدة</h2>
+
 <table>
   <thead>
     <tr>
-      <th>العميل</th>
+      <th>اسم العميل</th>
       <th>طريقة الدفع</th>
-      <th>إلى رقم</th>
-      <th>من رقم</th>
+      <th>رقم الهاتف</th>
       <th>المبلغ</th>
-      <th>صورة الإيصال</th>
+      <th>الصورة</th>
       <th>التاريخ</th>
       <th>إجراءات</th>
     </tr>
@@ -49,46 +72,50 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-function loadPayments() {
-  const table = document.getElementById('paymentsTable');
-  table.innerHTML = '';
-  db.ref('pendingPayments').on('value', snapshot => {
-    table.innerHTML = '';
-    snapshot.forEach(clientSnap => {
-      const clientId = clientSnap.key;
-      clientSnap.forEach(paymentSnap => {
-        const data = paymentSnap.val();
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${data.clientName}</td>
-          <td>${data.method}</td>
-          <td>${data.toNumber}</td>
-          <td>${data.fromNumber}</td>
-          <td>${data.amount}</td>
-          <td><img src="${data.receiptURL}"></td>
-          <td>${data.date}</td>
+const paymentsTable = document.getElementById('paymentsTable');
+
+// جلب كل العملاء
+db.ref('clients').on('value', snapshot => {
+  paymentsTable.innerHTML = '';
+  snapshot.forEach(clientSnap => {
+    const clientId = clientSnap.key;
+    const clientName = clientSnap.val().name;
+
+    db.ref(`clients/${clientId}/payments`).on('value', paymentsSnap => {
+      paymentsSnap.forEach(paymentSnap => {
+        const payment = paymentSnap.val();
+        if (payment.confirmed) return; // تجاهل المحولات المؤكدة
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${clientName}</td>
+          <td>${payment.method}</td>
+          <td>${payment.senderPhone}</td>
+          <td>${payment.amount}</td>
+          <td>${payment.imageURL ? `<img src="${payment.imageURL}" alt="صورة التحويل">` : ''}</td>
+          <td>${payment.date}</td>
           <td>
-            <button class="confirm" onclick="confirmPayment('${clientId}','${paymentSnap.key}', ${data.amount})">تأكيد</button>
-            <button class="delete" onclick="deletePayment('${clientId}','${paymentSnap.key}')">حذف</button>
+            <button class="confirm-btn" onclick="confirmPayment('${clientId}','${paymentSnap.key}')">تأكيد</button>
+            <button class="delete-btn" onclick="deletePayment('${clientId}','${paymentSnap.key}')">حذف</button>
           </td>
         `;
-        table.appendChild(row);
+        paymentsTable.appendChild(tr);
       });
     });
   });
+});
+
+function confirmPayment(clientId, paymentId) {
+  db.ref(`clients/${clientId}/payments/${paymentId}`).update({ confirmed: true })
+    .then(() => alert('تم تأكيد الدفع!'));
 }
 
-function confirmPayment(clientId, paymentKey, amount) {
-  const debtsRef = db.ref(`clients/${clientId}/debts`).push();
-  debtsRef.set({ product: "دفعة", amount: amount, date: new Date().toLocaleString() })
-    .then(() => db.ref(`pendingPayments/${clientId}/${paymentKey}`).remove());
+function deletePayment(clientId, paymentId) {
+  if (!confirm('هل تريد حذف هذا التحويل؟')) return;
+  db.ref(`clients/${clientId}/payments/${paymentId}`).remove()
+    .then(() => alert('تم حذف التحويل!'));
 }
-
-function deletePayment(clientId, paymentKey) {
-  db.ref(`pendingPayments/${clientId}/${paymentKey}`).remove();
-}
-
-loadPayments();
 </script>
+
 </body>
 </html>
