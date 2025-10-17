@@ -15,7 +15,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url('YOUR_BACKGROUND.jpg'); /* هنا تحط اسم الصورة الخاصة بالخلفية */
+  background-image: url('YOUR_BACKGROUND.jpg'); /* حط الخلفية هنا */
   background-size: cover;
   background-position: center;
 }
@@ -68,6 +68,7 @@ button:hover {
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
+// إعداد Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
   authDomain: "ahmed-77878.firebaseapp.com",
@@ -80,10 +81,11 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let allClients = {};
-db.ref('clients').once('value', snapshot => {
-  allClients = snapshot.val() || {};
-});
+// كلمات السر المخزنة في الكود
+const passwords = {
+  "أحمد علي": "1234",
+  "محمد حسن": "2222"
+};
 
 document.getElementById('loginBtn').addEventListener('click', login);
 
@@ -97,26 +99,21 @@ function login() {
     return;
   }
 
-  let found = false;
-  for (let key in allClients) {
-    if (allClients[key].name.trim() === name) {
-      const clientPass = allClients[key].password ? allClients[key].password.trim() : "";
-      if (pass === clientPass) {
-        localStorage.setItem('clientId', key);
+  // التحقق من الباسورد المخزن في الكود
+  if (passwords[name] && passwords[name] === pass) {
+    // البحث عن العميل في Firebase
+    db.ref('clients').orderByChild('name').equalTo(name).once('value', snapshot => {
+      if (snapshot.exists()) {
+        const clientKey = Object.keys(snapshot.val())[0];
+        localStorage.setItem('clientId', clientKey);
         localStorage.setItem('clientName', name);
         window.location.href = "client.html";
-        found = true;
-        break;
       } else {
-        errorDiv.innerText = "كلمة السر غير صحيحة!";
-        found = true;
-        break;
+        errorDiv.innerText = "الاسم غير موجود في النظام";
       }
-    }
-  }
-
-  if (!found) {
-    errorDiv.innerText = "الاسم غير موجود!";
+    });
+  } else {
+    errorDiv.innerText = "كلمة السر غير صحيحة!";
   }
 }
 </script>
