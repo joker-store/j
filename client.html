@@ -47,7 +47,8 @@
     db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
       let total = 0;
       snapshot.forEach(child => {
-        total += parseFloat(child.val().amount);
+        const amount = parseFloat(child.val().amount);
+        if (!isNaN(amount)) total += amount;
       });
       document.getElementById('balance').innerText = total;
     });
