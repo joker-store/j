@@ -18,7 +18,6 @@ body {
   background-image: url('YOUR_BACKGROUND.jpg');
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
 }
 .box {
   background: rgba(255,255,255,0.1);
@@ -96,6 +95,7 @@ function submitPayment() {
     confirmed: false
   };
 
+  // رفع الصورة إذا موجودة
   if (imageFile) {
     const storageRef = storage.ref(`payments/${clientId}/${paymentRef.key}_${imageFile.name}`);
     storageRef.put(imageFile).then(snapshot => {
@@ -103,14 +103,20 @@ function submitPayment() {
         paymentData.imageURL = url;
         paymentRef.set(paymentData).then(() => {
           alert("تم إرسال التحويل بنجاح!");
-          window.location.href = "client.html";
+          window.location.href = "client.html"; // العودة للعميل
         });
       });
+    }).catch(err => {
+      alert("حدث خطأ في رفع الصورة!");
+      console.error(err);
     });
   } else {
     paymentRef.set(paymentData).then(() => {
       alert("تم إرسال التحويل بنجاح!");
-      window.location.href = "client.html";
+      window.location.href = "client.html"; // العودة للعميل
+    }).catch(err => {
+      alert("حدث خطأ في تسجيل التحويل!");
+      console.error(err);
     });
   }
 }
