@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدفع</title>
+<style>
+body { font-family: Tahoma; direction: rtl; text-align: center; padding: 0; margin: 0; background: #f5f5f5; }
+.box { background: white; margin: 50px auto; padding: 20px; max-width: 400px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+h2 { margin-bottom: 15px; }
+input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; }
+button { padding: 12px; width: 95%; margin-top: 10px; border: none; border-radius: 10px; background: #2196f3; color: white; cursor: pointer; }
+button:hover { background: #1976d2; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h2>تسجيل الدفع بواسطة <span id="methodName"></span></h2>
+  <p>رقم التحويل: <span id="paymentNumber"></span></p>
+
+  <input type="text" id="fromNumber" placeholder="رقم الهاتف المحول منه">
+  <input type="number" id="amount" placeholder="المبلغ المحول">
+  <input type="file" id="receipt" accept="image/*">
+  <button onclick="sendPayment()">إرسال الدفع</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
+  authDomain: "ahmed-77878.firebaseapp.com",
+  databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ahmed-77878",
+  storageBucket: "ahmed-77878.appspot.com",
+  messagingSenderId: "566732207368",
+  appId: "1:566732207368:web:d88477f62ecf475e2628bd"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const storage = firebase.storage();
+
+const clientId = localStorage.getItem('clientId');
+const clientName = localStorage.getItem('clientName');
+const method = localStorage.getItem('paymentMethod');
+
+if (!clientId) { alert("الرجاء تسجيل الدخول"); window.location.href="login.html"; }
+
+let paymentNumber = '';
+if (method === 'fcash') paymentNumber = '0123456789';
+if (method === 'instapay') paymentNumber = '01111223344';
+document.getElementById('methodName').innerText = method;
+document.getElementById('paymentNumber').innerText = paymentNumber;
+
+function sendPayment() {
+  const fromNumber = document.getElementById('fromNumber').value.trim();
+  const amount = parseFloat(document.getElementById('amount').value);
+  const receipt = document.getElementById('receipt').files[0];
+
+  if (!fromNumber || !amount || !receipt) return alert("أدخل كل البيانات وارفع صورة");
+
+  const storageRef = storage.ref(`receipts/${clientId}_${Date.now()}.jpg`);
+  storageRef.put(receipt).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
+    const newPaymentRef = db.ref(`pendingPayments/${clientId}`).push();
+    newPaymentRef.set({
+      clientName: clientName,
+      method: method,
+      toNumber: paymentNumber,
+      fromNumber: fromNumber,
+      amount: amount,
+      receiptURL: url,
+      date: new Date().toLocaleString()
+    }).then(() => {
+      alert("تم إرسال الدفع بنجاح");
+      window.location.href = "client.html";
+    });
+  }).catch(err => alert("خطأ أثناء رفع البيانات: " + err));
+}
+</script>
+</body>
+</html>

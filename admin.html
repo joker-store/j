@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إدارة المدفوعات</title>
+<style>
+body { font-family: Tahoma; direction: rtl; padding: 20px; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+th { background: #2196f3; color: white; }
+button { padding: 6px 10px; border-radius: 5px; border: none; cursor: pointer; margin: 2px; }
+.confirm { background: green; color: white; }
+.delete { background: red; color: white; }
+img { max-width: 100px; }
+</style>
+</head>
+<body>
+<h2>طلبات التحويل المؤقتة</h2>
+<table>
+  <thead>
+    <tr>
+      <th>العميل</th>
+      <th>طريقة الدفع</th>
+      <th>إلى رقم</th>
+      <th>من رقم</th>
+      <th>المبلغ</th>
+      <th>صورة الإيصال</th>
+      <th>التاريخ</th>
+      <th>إجراءات</th>
+    </tr>
+  </thead>
+  <tbody id="paymentsTable"></tbody>
+</table>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
+  authDomain: "ahmed-77878.firebaseapp.com",
+  databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ahmed-77878",
+  storageBucket: "ahmed-77878.appspot.com",
+  messagingSenderId: "566732207368",
+  appId: "1:566732207368:web:d88477f62ecf475e2628bd"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function loadPayments() {
+  const table = document.getElementById('paymentsTable');
+  table.innerHTML = '';
+  db.ref('pendingPayments').on('value', snapshot => {
+    table.innerHTML = '';
+    snapshot.forEach(clientSnap => {
+      const clientId = clientSnap.key;
+      clientSnap.forEach(paymentSnap => {
+        const data = paymentSnap.val();
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${data.clientName}</td>
+          <td>${data.method}</td>
+          <td>${data.toNumber}</td>
+          <td>${data.fromNumber}</td>
+          <td>${data.amount}</td>
+          <td><img src="${data.receiptURL}"></td>
+          <td>${data.date}</td>
+          <td>
+            <button class="confirm" onclick="confirmPayment('${clientId}','${paymentSnap.key}', ${data.amount})">تأكيد</button>
+            <button class="delete" onclick="deletePayment('${clientId}','${paymentSnap.key}')">حذف</button>
+          </td>
+        `;
+        table.appendChild(row);
+      });
+    });
+  });
+}
+
+function confirmPayment(clientId, paymentKey, amount) {
+  const debtsRef = db.ref(`clients/${clientId}/debts`).push();
+  debtsRef.set({ product: "دفعة", amount: amount, date: new Date().toLocaleString() })
+    .then(() => db.ref(`pendingPayments/${clientId}/${paymentKey}`).remove());
+}
+
+function deletePayment(clientId, paymentKey) {
+  db.ref(`pendingPayments/${clientId}/${paymentKey}`).remove();
+}
+
+loadPayments();
+</script>
+</body>
+</html>
