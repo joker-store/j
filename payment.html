@@ -15,7 +15,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url('YOUR_BACKGROUND.jpg');
+  background-image: url('payment_background.jpg'); /* ضع الخلفية هنا */
   background-size: cover;
   background-position: center;
 }
@@ -95,29 +95,32 @@ function submitPayment() {
     confirmed: false
   };
 
-  // رفع الصورة إذا موجودة
   if (imageFile) {
     const storageRef = storage.ref(`payments/${clientId}/${paymentRef.key}_${imageFile.name}`);
-    storageRef.put(imageFile).then(snapshot => {
-      snapshot.ref.getDownloadURL().then(url => {
+    storageRef.put(imageFile)
+      .then(snapshot => snapshot.ref.getDownloadURL())
+      .then(url => {
         paymentData.imageURL = url;
-        paymentRef.set(paymentData).then(() => {
-          alert("تم إرسال التحويل بنجاح!");
-          window.location.href = "client.html"; // العودة للعميل
-        });
+        return paymentRef.set(paymentData);
+      })
+      .then(() => {
+        alert("تم إرسال التحويل بنجاح!");
+        window.location.href = "client.html";
+      })
+      .catch(err => {
+        console.error('Error uploading:', err);
+        alert("حدث خطأ في رفع الصورة!");
       });
-    }).catch(err => {
-      alert("حدث خطأ في رفع الصورة!");
-      console.error(err);
-    });
   } else {
-    paymentRef.set(paymentData).then(() => {
-      alert("تم إرسال التحويل بنجاح!");
-      window.location.href = "client.html"; // العودة للعميل
-    }).catch(err => {
-      alert("حدث خطأ في تسجيل التحويل!");
-      console.error(err);
-    });
+    paymentRef.set(paymentData)
+      .then(() => {
+        alert("تم إرسال التحويل بنجاح!");
+        window.location.href = "client.html";
+      })
+      .catch(err => {
+        console.error('Error saving data:', err);
+        alert("حدث خطأ في تسجيل التحويل!");
+      });
   }
 }
 </script>
