@@ -12,7 +12,7 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-image: url('YOUR_BACKGROUND.jpg'); /* ضع خلفيتك هنا */
+  background-image: url('admin_background.jpg'); /* ضع خلفيتك هنا */
   background-size: cover;
   background-position: center;
   color: #fff;
@@ -47,12 +47,14 @@ button {
 }
 .confirm-btn { background-color: #28a745; color: white; }
 .delete-btn { background-color: #dc3545; color: white; }
+#loadingMsg { color: yellow; margin-bottom: 10px; }
 </style>
 </head>
 <body>
 
 <div class="container">
   <h2>لوحة الإدارة - التحويلات الجديدة</h2>
+  <p id="loadingMsg">جارٍ تحميل البيانات...</p>
   <table id="paymentsTable">
     <thead>
       <tr>
@@ -87,40 +89,53 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// جلب جميع العملاء وتحويلاتهم
 const paymentsTable = document.querySelector('#paymentsTable tbody');
+const loadingMsg = document.getElementById('loadingMsg');
 
-db.ref('clients').on('value', snapshot => {
+// مسح الجدول قبل كل تحديث
+function clearTable() {
   paymentsTable.innerHTML = '';
-  snapshot.forEach(clientSnap => {
-    const clientId = clientSnap.key;
-    const clientName = clientSnap.val().name;
+}
 
-    db.ref(`clients/${clientId}/payments`).on('value', paymentsSnap => {
-      paymentsSnap.forEach(paymentSnap => {
-        const payment = paymentSnap.val();
-        const tr = document.createElement('tr');
+// تحديث الجدول تلقائي
+function updateTable() {
+  clearTable();
+  db.ref('clients').once('value', snapshot => {
+    snapshot.forEach(clientSnap => {
+      const clientId = clientSnap.key;
+      const clientName = clientSnap.val().name;
 
-        // فقط التحويلات غير المؤكدة تظهر
-        if (payment.confirmed) return;
-
-        tr.innerHTML = `
-          <td>${clientName}</td>
-          <td>${payment.method}</td>
-          <td>${payment.senderPhone}</td>
-          <td>${payment.amount}</td>
-          <td>${payment.imageURL ? `<img src="${payment.imageURL}" />` : ''}</td>
-          <td>${payment.date}</td>
-          <td>
-            <button class="confirm-btn" onclick="confirmPayment('${clientId}','${paymentSnap.key}')">تأكيد</button>
-            <button class="delete-btn" onclick="deletePayment('${clientId}','${paymentSnap.key}')">حذف</button>
-          </td>
-        `;
-        paymentsTable.appendChild(tr);
+      db.ref(`clients/${clientId}/payments`).once('value', paymentsSnap => {
+        paymentsSnap.forEach(paymentSnap => {
+          const payment = paymentSnap.val();
+          if (payment.confirmed) return; // فقط التحويلات غير المؤكدة
+          
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${clientName}</td>
+            <td>${payment.method}</td>
+            <td>${payment.senderPhone}</td>
+            <td>${payment.amount}</td>
+            <td>${payment.imageURL ? `<img src="${payment.imageURL}" />` : ''}</td>
+            <td>${payment.date}</td>
+            <td>
+              <button class="confirm-btn" onclick="confirmPayment('${clientId}','${paymentSnap.key}')">تأكيد</button>
+              <button class="delete-btn" onclick="deletePayment('${clientId}','${paymentSnap.key}')">حذف</button>
+            </td>
+          `;
+          paymentsTable.appendChild(tr);
+        });
       });
     });
+    loadingMsg.innerText = "";
   });
-});
+}
+
+// استدعاء التحديث أول مرة
+updateTable();
+
+// تحديث تلقائي كل 3 ثواني
+setInterval(updateTable, 3000);
 
 // تأكيد التحويل
 function confirmPayment(clientId, paymentId) {
@@ -139,4 +154,3 @@ function deletePayment(clientId, paymentId) {
 
 </body>
 </html>
-
