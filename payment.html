@@ -78,7 +78,8 @@ button.delete { background: #dc3545; color: #fff; }
   <!-- نموذج الدفع -->
   <div id="paymentForm">
     <h3>إرسال التحويل: <span id="selectedMethod"></span></h3>
-    <h3>01019728653</h3>
+    <h3>Instapay:01055900315</h3>
+    <h3>VF_Cash:01019728653</h3>
     <input type="text" id="senderPhone" placeholder="رقم الهاتف المحول منه">
     <input type="number" id="amount" placeholder="المبلغ المحول">
     <input type="file" id="transferImage" accept="image/*">
@@ -168,7 +169,7 @@ function closePasswordModal(){ passwordModal.style.display='none'; document.getE
 
 function checkPassword(){
   const pass = document.getElementById('adminPassword').value;
-  if(pass==='joker123'){ // الباسورد اللي تختاره
+  if(pass==='joker2020'){ // الباسورد اللي تختاره
     passwordModal.style.display='none';
     document.getElementById('adminPanel').style.display='block';
     loadAdminPayments();
@@ -203,4 +204,5 @@ function deletePayment(id){ db.ref(`payments/${id}`).remove(); }
 </script>
 </body>
 </html>
+
 
