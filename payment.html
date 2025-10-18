@@ -3,32 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>دفع المبلغ</title>
+<title>إرسال التحويل</title>
 <style>
-body {
-  font-family: Tahoma, sans-serif;
-  direction: rtl;
-  text-align: center;
-  margin: 0; padding: 0;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-image: url('YOUR_BACKGROUND.jpg');
-  background-size: cover;
-  background-position: center;
-}
-.box {
-  background: rgba(255,255,255,0.1);
-  padding: 20px;
-  border-radius: 15px;
-  width: 90%;
-  max-width: 400px;
-}
-input, button { width: 90%; padding: 10px; margin: 10px 0; border-radius: 10px; border: none; font-size: 1em; }
-button { background-color: #28a745; color: white; cursor: pointer; transition: 0.2s; }
-button:hover { background-color: #218838; }
-#loadingMsg { color:white; margin-top:10px; }
+  body {
+    font-family: Tahoma, sans-serif;
+    direction: rtl;
+    text-align: center;
+    background-image: url('YOUR_BACKGROUND.jpg');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+  .box {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 400px;
+  }
+  input, button {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 10px;
+    border: none;
+    font-size: 1em;
+  }
+  button {
+    background-color: #28a745;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  button:hover { background-color: #218838; }
+  #loadingMsg { color: white; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -61,8 +74,9 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const storage = firebase.storage();
 
-const clientId = localStorage.getItem('clientId');
-const paymentMethod = localStorage.getItem('paymentMethod');
+// استدعاء طريقة الدفع من localStorage
+const clientId = localStorage.getItem('clientId') || `client_${Date.now()}`;
+const paymentMethod = localStorage.getItem('paymentMethod') || "غير محدد";
 document.getElementById('paymentMethod').innerText = paymentMethod;
 
 function submitPayment() {
@@ -70,10 +84,14 @@ function submitPayment() {
   const amount = parseFloat(document.getElementById('amount').value);
   const imageFile = document.getElementById('transferImage').files[0];
 
-  if (!senderPhone || !amount) return alert("ادخل جميع البيانات المطلوبة!");
+  if (!senderPhone || !amount) {
+    alert("ادخل جميع البيانات المطلوبة!");
+    return;
+  }
 
-  const paymentRef = db.ref(`clients/${clientId}/payments`).push();
+  const paymentRef = db.ref(`payments`).push();
   const paymentData = {
+    clientId,
     method: paymentMethod,
     senderPhone,
     amount,
@@ -81,26 +99,22 @@ function submitPayment() {
     confirmed: false
   };
 
-  // فورًا: رسالة نجاح للعميل
-  document.getElementById('loadingMsg').innerText = "تم الإرسال!";
-  setTimeout(() => window.location.href = "client.html", 500);
+  // ✅ رسالة فورية
+  document.getElementById('loadingMsg').innerText = "✅ تم الإرسال بنجاح";
+  setTimeout(() => window.location.href = "client.html", 1000);
 
-  // حفظ البيانات الأساسية في الخلفية
-  paymentRef.set(paymentData)
-    .then(() => {
-      console.log("Payment saved!");
-      if (imageFile) {
-        const storageRef = storage.ref(`payments/${clientId}/${paymentRef.key}_${imageFile.name}`);
-        storageRef.put(imageFile)
-          .then(snapshot => snapshot.ref.getDownloadURL())
-          .then(url => paymentRef.update({ imageURL: url }))
-          .catch(err => console.error("Error uploading image:", err));
-      }
-    })
-    .catch(err => console.error("Error saving payment:", err));
+  // 📝 رفع البيانات
+  paymentRef.set(paymentData).then(() => {
+    if (imageFile) {
+      const storageRef = storage.ref(`payments/${paymentRef.key}_${imageFile.name}`);
+      storageRef.put(imageFile)
+        .then(snapshot => snapshot.ref.getDownloadURL())
+        .then(url => paymentRef.update({ imageURL: url }))
+        .catch(err => console.error("خطأ في رفع الصورة:", err));
+    }
+  }).catch(err => console.error("خطأ في حفظ الدفع:", err));
 }
 </script>
 
 </body>
 </html>
-
