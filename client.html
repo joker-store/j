@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>رصيد العميل والدفع</title>
+<title>لوحة العميل والإدمن</title>
 <style>
 body {
   font-family: Tahoma, sans-serif;
@@ -25,15 +25,12 @@ body {
   padding: 20px;
   border-radius: 15px;
   width: 90%;
-  max-width: 400px;
+  max-width: 350px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
-h2, h3, h1, p, label { color: #fff; }
-h2 { font-size: 1.5em; }
-h3 { font-size: 1.2em; }
-h1 { font-size: 2.5em; color: green; }
-
-/* أزرار الدفع */
+h2 { margin-bottom: 15px; font-size: 1.5em; color: #fff; }
+h3 { margin: 10px 0; font-size: 1.2em; color: #fff; }
+h1 { font-size: 2.5em; color: green; margin: 10px 0; }
 .payment-buttons {
   display: flex;
   justify-content: space-around;
@@ -63,212 +60,151 @@ h1 { font-size: 2.5em; color: green; }
   height: 50px;
   margin-bottom: 10px;
 }
-
-/* فورم الدفع */
-#paymentForm {
-  display: none;
-  margin-top: 20px;
-}
-input, button {
-  width: 90%;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 10px;
-  border: none;
-  font-size: 1em;
-}
-input[type="file"] { background: rgba(255,255,255,0.2); color: white; }
-button {
-  background-color: #28a745;
-  color: white;
+/* زر الاعدادات */
+#adminIcon {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  font-size: 25px;
   cursor: pointer;
-}
-button:hover { background-color: #218838; }
-
-/* الأدمن */
-#adminSection {
-  display: none;
-  margin-top: 20px;
-}
-.admin-login input {
-  margin-bottom: 10px;
-}
-.payment-item {
-  background: rgba(255,255,255,0.2);
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 10px;
   color: white;
 }
-.payment-item img {
-  max-width: 100%;
+/* نافذة الادمن */
+#adminPanel {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.8);
+  padding: 20px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 400px;
+  color: white;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+#adminPanel h2 {
+  margin-bottom: 10px;
+  color: #fff;
+}
+#adminPanel ul {
+  list-style: none;
+  padding: 0;
+}
+#adminPanel li {
+  background: rgba(255,255,255,0.1);
+  margin: 5px 0;
+  padding: 10px;
   border-radius: 10px;
-  margin-top: 5px;
+}
+#closeAdmin {
+  background: red;
+  color: white;
+  padding: 5px 10px;
+  margin-top: 10px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
 }
 </style>
 </head>
 <body>
+<span id="adminIcon">⚙️</span>
 
-<div class="box">
+<!-- واجهة العميل -->
+<div class="box" id="clientBox">
   <h2 id="clientName">اسم العميل</h2>
   <h3>رصيدك الحالي:</h3>
   <h1><span id="balance">0</span> جنيه</h1>
 
-  <div class="payment-buttons" id="paymentButtons">
-    <button onclick="openPayment('فودافون كاش')">
+  <div class="payment-buttons">
+    <button onclick="sendPayment('فودافون كاش')">
       <img src="fcash_icon.png" alt="فودافون كاش">
       فودافون كاش
     </button>
 
-    <button onclick="openPayment('Instapay')">
+    <button onclick="sendPayment('Instapay')">
       <img src="instapay_icon.png" alt="Instapay">
       Instapay
     </button>
   </div>
-
-  <!-- فورم الدفع -->
-  <div id="paymentForm">
-    <h3>طريقة الدفع: <span id="selectedMethod"></span></h3>
-    <input type="text" id="senderPhone" placeholder="رقم الهاتف المحول منه" required>
-    <input type="number" id="amount" placeholder="المبلغ المحول" required>
-    <input type="file" id="transferImage" accept="image/*">
-    <button onclick="submitPayment()">إرسال</button>
-    <p id="loadingMsg"></p>
-  </div>
-
-  <!-- زر دخول الأدمن -->
-  <div id="adminLogin" class="admin-login">
-    <input type="password" id="adminPassword" placeholder="كلمة سر الأدمن">
-    <button onclick="loginAdmin()">تسجيل دخول الأدمن</button>
-  </div>
-
-  <!-- لوحة الأدمن -->
-  <div id="adminSection">
-    <h3>طلبات التحويل</h3>
-    <div id="paymentList"></div>
-  </div>
 </div>
 
-<!-- Firebase -->
+<!-- لوحة الأدمن -->
+<div id="adminPanel">
+  <h2>لوحة الأدمن</h2>
+  <ul id="ordersList"></ul>
+  <button id="closeAdmin">إغلاق</button>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
 <script>
-// 🔥 إعداد Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
   authDomain: "ahmed-77878.firebaseapp.com",
   databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "ahmed-77878",
-  storageBucket: "ahmed-77878.appspot.com",
+  storageBucket: "ahmed-77878.firebasestorage.app",
   messagingSenderId: "566732207368",
   appId: "1:566732207368:web:d88477f62ecf475e2628bd"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const storage = firebase.storage();
 
-// 🧍 بيانات العميل
 const clientId = localStorage.getItem('clientId');
 const clientName = localStorage.getItem('clientName') || "العميل";
 document.getElementById('clientName').innerText = clientName;
 
-// 🧾 حساب الرصيد
-if (clientId) {
-  db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
-    let total = 0;
-    snapshot.forEach(child => {
-      const amount = parseFloat(child.val().amount);
-      if (!isNaN(amount)) total += amount;
-    });
-    document.getElementById('balance').innerText = total;
+// الرصيد من الديون
+db.ref(`clients/${clientId}/debts`).on('value', snap => {
+  let total = 0;
+  snap.forEach(child => {
+    total += parseFloat(child.val().amount) || 0;
   });
+  document.getElementById('balance').innerText = total;
+});
+
+// إرسال الدفع
+function sendPayment(method) {
+  const orderRef = db.ref(`orders`).push();
+  orderRef.set({
+    clientId: clientId,
+    clientName: clientName,
+    method: method,
+    time: new Date().toLocaleString()
+  });
+  alert("✅ تم إرسال طلب الدفع للإدمن");
 }
 
-// 📲 فتح فورم الدفع
-let selectedMethod = "";
-function openPayment(method) {
-  selectedMethod = method;
-  document.getElementById('selectedMethod').innerText = method;
-  document.getElementById('paymentForm').style.display = 'block';
-  document.getElementById('paymentButtons').style.display = 'none';
-}
-
-// 📤 إرسال الدفع مباشرة للأدمن
-function submitPayment() {
-  const senderPhone = document.getElementById('senderPhone').value.trim();
-  const amount = document.getElementById('amount').value.trim();
-  const imageFile = document.getElementById('transferImage').files[0];
-
-  if (!senderPhone || !amount) {
-    alert("من فضلك أدخل كل البيانات المطلوبة");
-    return;
+// فتح الادمن
+document.getElementById('adminIcon').addEventListener('click', () => {
+  const pass = prompt("أدخل كلمة سر الأدمن:");
+  if (pass === "1234") { // غير الباسورد كما تريد
+    document.getElementById('adminPanel').style.display = 'block';
+  } else if (pass !== null) {
+    alert("❌ كلمة سر غير صحيحة");
   }
+});
 
-  document.getElementById('loadingMsg').innerText = "✅ تم الإرسال بنجاح";
-
-  const paymentRef = db.ref(`payments`).push();
-  const paymentData = {
-    clientId,
-    clientName,
-    method: selectedMethod,
-    senderPhone,
-    amount,
-    date: new Date().toLocaleString(),
-    confirmed: false
-  };
-
-  paymentRef.set(paymentData).then(() => {
-    if (imageFile) {
-      const storageRef = storage.ref(`payments/${paymentRef.key}_${imageFile.name}`);
-      storageRef.put(imageFile)
-      .then(snapshot => snapshot.ref.getDownloadURL())
-      .then(url => paymentRef.update({ imageURL: url }));
-    }
-    setTimeout(() => location.reload(), 1500);
+// تحميل الطلبات في لوحة الادمن
+db.ref('orders').on('value', snap => {
+  const list = document.getElementById('ordersList');
+  list.innerHTML = '';
+  snap.forEach(order => {
+    const data = order.val();
+    const li = document.createElement('li');
+    li.innerText = `👤 ${data.clientName} | 💰 ${data.method} | 🕒 ${data.time}`;
+    list.appendChild(li);
   });
-}
+});
 
-// 🛡️ تسجيل دخول الأدمن
-const ADMIN_PASSWORD = "1234"; // 🔐 غيرها كما تشاء
-function loginAdmin() {
-  const pass = document.getElementById('adminPassword').value;
-  if (pass === ADMIN_PASSWORD) {
-    document.getElementById('adminLogin').style.display = 'none';
-    document.getElementById('adminSection').style.display = 'block';
-    loadPayments();
-  } else {
-    alert("كلمة السر غير صحيحة");
-  }
-}
-
-// 📥 تحميل طلبات التحويل
-function loadPayments() {
-  const list = document.getElementById('paymentList');
-  list.innerHTML = "";
-  db.ref('payments').on('value', snapshot => {
-    list.innerHTML = "";
-    if (!snapshot.exists()) {
-      list.innerHTML = "<p>لا توجد طلبات حالياً</p>";
-      return;
-    }
-    snapshot.forEach(child => {
-      const data = child.val();
-      const div = document.createElement('div');
-      div.className = "payment-item";
-      div.innerHTML = `
-        <p><b>العميل:</b> ${data.clientName}</p>
-        <p><b>الطريقة:</b> ${data.method}</p>
-        <p><b>رقم الهاتف:</b> ${data.senderPhone}</p>
-        <p><b>المبلغ:</b> ${data.amount} جنيه</p>
-        <p><b>التاريخ:</b> ${data.date}</p>
-        ${data.imageURL ? `<img src="${data.imageURL}" alt="صورة التحويل">` : ""}
-      `;
-      list.appendChild(div);
-    });
-  });
-}
+document.getElementById('closeAdmin').addEventListener('click', () => {
+  document.getElementById('adminPanel').style.display = 'none';
+});
 </script>
 </body>
 </html>
