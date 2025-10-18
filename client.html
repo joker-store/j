@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>دفع المبلغ</title>
+<title>رصيد العميل</title>
 <style>
 body {
   font-family: Tahoma, sans-serif;
   direction: rtl;
   text-align: center;
-  margin: 0;
-  padding: 0;
+  margin: 0; padding: 0;
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -22,42 +21,58 @@ body {
   padding: 20px;
   border-radius: 15px;
   width: 90%;
-  max-width: 400px;
+  max-width: 350px;
   color: #fff;
 }
-input, button {
-  width: 90%;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 10px;
-  border: none;
-  font-size: 1em;
+h2 { margin-bottom: 15px; font-size: 1.5em; }
+h3 { margin: 10px 0; font-size: 1.2em; }
+h1 { font-size: 2.5em; color: green; margin: 10px 0; }
+
+/* أزرار الدفع */
+.payment-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
 }
-button {
-  background-color: #28a745;
-  color: white;
+.payment-buttons button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border: 2px solid white;
+  border-radius: 15px;
   cursor: pointer;
+  font-size: 14px;
+  color: white;
+  background: rgba(255,255,255,0.1);
+  transition: transform 0.2s, background 0.2s;
 }
-button:hover {
-  background-color: #218838;
+.payment-buttons button:hover {
+  transform: scale(1.05);
+  background: rgba(255,255,255,0.2);
 }
-img.preview {
-  max-width: 100%;
-  margin-top: 10px;
-  display: none;
-}
+.payment-buttons img { width: 50px; height: 50px; margin-bottom: 10px; }
 </style>
 </head>
 <body>
-
 <div class="box">
-  <h2>إرسال التحويل</h2>
-  <input type="text" id="senderPhone" placeholder="رقم الهاتف المحول منه" required>
-  <input type="number" id="amount" placeholder="المبلغ المحول" required>
-  <input type="file" id="transferImage" accept="image/*" onchange="previewImage(event)">
-  <img id="imagePreview" class="preview" alt="معاينة التحويل">
-  <button onclick="submitPayment()">إرسال</button>
-  <p id="msg"></p>
+  <h2 id="clientName">اسم العميل</h2>
+  <h3>رصيدك الحالي:</h3>
+  <h1><span id="balance">0</span> جنيه</h1>
+
+  <div class="payment-buttons">
+    <button onclick="goPayment('fcash')">
+      <img src="fcash_icon.png" alt="فودافون كاش">
+      فودافون كاش
+    </button>
+
+    <button onclick="goPayment('instapay')">
+      <img src="instapay_icon.png" alt="Instapay">
+      Instapay
+    </button>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -69,51 +84,36 @@ const firebaseConfig = {
   authDomain: "ahmed-77878.firebaseapp.com",
   databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "ahmed-77878",
-  storageBucket: "ahmed-77878.appspot.com",
+  storageBucket: "ahmed-77878.firebasestorage.app",
   messagingSenderId: "566732207368",
   appId: "1:566732207368:web:d88477f62ecf475e2628bd"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-function previewImage(event) {
-  const file = event.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      document.getElementById('imagePreview').src = e.target.result;
-      document.getElementById('imagePreview').style.display = 'block';
-    }
-    reader.readAsDataURL(file);
-  }
+const clientId = localStorage.getItem('clientId');
+const clientName = localStorage.getItem('clientName');
+
+if (!clientId) {
+  alert("الرجاء تسجيل الدخول أولاً");
+  window.location.href = "login.html";
 }
 
-function submitPayment() {
-  const senderPhone = document.getElementById('senderPhone').value.trim();
-  const amount = parseFloat(document.getElementById('amount').value);
-  const file = document.getElementById('transferImage').files[0];
+document.getElementById('clientName').innerText = clientName;
 
-  if (!senderPhone || !amount || !file) {
-    alert("الرجاء إدخال جميع البيانات");
-    return;
-  }
+// حساب الرصيد من الديون
+db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
+  let total = 0;
+  snapshot.forEach(child => {
+    const amount = parseFloat(child.val().amount);
+    if (!isNaN(amount)) total += amount;
+  });
+  document.getElementById('balance').innerText = total;
+});
 
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const base64Image = e.target.result;
-    const paymentRef = db.ref("payments").push();
-    paymentRef.set({
-      senderPhone,
-      amount,
-      image: base64Image,
-      date: new Date().toLocaleString(),
-      confirmed: false
-    }).then(() => {
-      document.getElementById('msg').innerText = "✅ تم الإرسال بنجاح!";
-      setTimeout(() => window.location.href = "client.html", 1000);
-    });
-  };
-  reader.readAsDataURL(file);
+function goPayment(method) {
+  localStorage.setItem('paymentMethod', method);
+  window.location.href = "payment.html"; // الانتقال لصفحة الدفع
 }
 </script>
 </body>
