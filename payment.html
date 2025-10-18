@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>طرق الدفع والأدمن</title>
+<title>طرق الدفع + الأدمن</title>
 <style>
 body {
   font-family: Tahoma, sans-serif;
@@ -44,18 +44,25 @@ body {
 }
 .payment-buttons button:hover { transform: scale(1.05); background: rgba(255,255,255,0.2); }
 .payment-buttons img { width: 50px; height: 50px; margin-bottom: 10px; }
+
 input, button.send-btn { width: 90%; padding: 10px; margin: 10px 0; border-radius: 10px; border: none; font-size: 1em; }
 button.send-btn { background-color: #28a745; color: white; cursor: pointer; }
 button.send-btn:hover { background-color: #218838; }
+
 .payment-card { background: rgba(0,0,0,0.5); margin: 10px 0; padding: 10px; border-radius: 10px; }
 .payment-card img { max-width: 100%; margin: 10px 0; }
 button.confirm { background: #28a745; color: #fff; margin-right: 5px; }
 button.delete { background: #dc3545; color: #fff; }
+
 #paymentForm { display: none; }
-#loadingMsg { margin-top:10px; color:#fff; }
+#adminPanel { display: none; margin-top:20px; }
+#adminIcon { position: fixed; top: 20px; left: 20px; cursor: pointer; width: 50px; height:50px; }
+#passwordModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; }
+#passwordModalContent { background:#fff; padding:20px; border-radius:10px; width:300px; text-align:center; color:#000; }
 </style>
 </head>
 <body>
+<img id="adminIcon" src="admin_icon.png" alt="أيقونة الأدمن" title="لوحة الأدمن">
 
 <div class="container">
   <h2>طرق الدفع</h2>
@@ -78,9 +85,21 @@ button.delete { background: #dc3545; color: #fff; }
     <p id="loadingMsg"></p>
   </div>
 
-  <h2>طلبات الأدمن</h2>
-  <div id="paymentsContainer">
-    <p>جارٍ تحميل الطلبات...</p>
+  <!-- لوحة الأدمن -->
+  <div id="adminPanel">
+    <h2>طلبات الأدمن</h2>
+    <div id="paymentsContainer"><p>جارٍ تحميل الطلبات...</p></div>
+  </div>
+</div>
+
+<!-- نافذة الباسورد -->
+<div id="passwordModal">
+  <div id="passwordModalContent">
+    <h3>أدخل كلمة المرور</h3>
+    <input type="password" id="adminPassword" placeholder="كلمة المرور">
+    <br>
+    <button onclick="checkPassword()">دخول</button>
+    <button onclick="closePasswordModal()">إلغاء</button>
   </div>
 </div>
 
@@ -88,7 +107,7 @@ button.delete { background: #dc3545; color: #fff; }
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-// إعداد Firebase
+// Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
   authDomain: "ahmed-77878.firebaseapp.com",
@@ -101,16 +120,15 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// فتح نموذج الدفع
+// الدفع
 let selectedMethod = "";
-function openPayment(method) {
+function openPayment(method){
   selectedMethod = method;
   document.getElementById('selectedMethod').innerText = method;
-  document.getElementById('paymentForm').style.display = 'block';
+  document.getElementById('paymentForm').style.display='block';
 }
 
-// إرسال التحويل
-function submitPayment() {
+function submitPayment(){
   const senderPhone = document.getElementById('senderPhone').value.trim();
   const amount = parseFloat(document.getElementById('amount').value);
   const imageFile = document.getElementById('transferImage').files[0];
@@ -118,51 +136,66 @@ function submitPayment() {
 
   const reader = new FileReader();
   reader.onload = function(e){
-    const base64Image = imageFile ? e.target.result : null;
-
+    const base64Image = imageFile? e.target.result : null;
     const paymentRef = db.ref('payments').push();
     paymentRef.set({
       method: selectedMethod,
       senderPhone,
       amount,
       date: new Date().toLocaleString(),
-      confirmed: false,
+      confirmed:false,
       imageBase64: base64Image
     });
-
-    document.getElementById('loadingMsg').innerText = "تم الإرسال!";
-    setTimeout(()=>{ 
+    document.getElementById('loadingMsg').innerText="تم الإرسال!";
+    setTimeout(()=>{
       document.getElementById('paymentForm').style.display='none';
-      document.getElementById('loadingMsg').innerText = "";
+      document.getElementById('loadingMsg').innerText="";
       document.getElementById('senderPhone').value="";
       document.getElementById('amount').value="";
       document.getElementById('transferImage').value="";
-    }, 500);
+    },500);
   };
   if(imageFile) reader.readAsDataURL(imageFile);
   else reader.onload();
 }
 
-// تحميل الطلبات للأدمن
-const container = document.getElementById('paymentsContainer');
-db.ref('payments').on('value', snapshot=>{
-  container.innerHTML="";
-  if(!snapshot.exists()){ container.innerHTML="<p>لا يوجد طلبات حالياً</p>"; return; }
-  snapshot.forEach(child=>{
-    const p = child.val();
-    const card = document.createElement('div');
-    card.className = 'payment-card';
-    card.innerHTML = `
-      <p><strong>طريقة الدفع:</strong> ${p.method}</p>
-      <p><strong>رقم الهاتف:</strong> ${p.senderPhone}</p>
-      <p><strong>المبلغ:</strong> ${p.amount} جنيه</p>
-      ${p.imageBase64?`<img src="${p.imageBase64}" alt="صورة التحويل">`:''}
-      <button class="confirm" onclick="confirmPayment('${child.key}')">تأكيد</button>
-      <button class="delete" onclick="deletePayment('${child.key}')">حذف</button>
-    `;
-    container.appendChild(card);
+// أيقونة الأدمن
+const adminIcon = document.getElementById('adminIcon');
+const passwordModal = document.getElementById('passwordModal');
+adminIcon.onclick = ()=>{ passwordModal.style.display='flex'; }
+function closePasswordModal(){ passwordModal.style.display='none'; document.getElementById('adminPassword').value=''; }
+
+function checkPassword(){
+  const pass = document.getElementById('adminPassword').value;
+  if(pass==='joker123'){ // الباسورد اللي تختاره
+    passwordModal.style.display='none';
+    document.getElementById('adminPanel').style.display='block';
+    loadAdminPayments();
+  } else { alert("كلمة المرور غير صحيحة!"); }
+}
+
+// لوحة الأدمن
+function loadAdminPayments(){
+  const container = document.getElementById('paymentsContainer');
+  db.ref('payments').on('value', snapshot=>{
+    container.innerHTML="";
+    if(!snapshot.exists()){ container.innerHTML="<p>لا يوجد طلبات حالياً</p>"; return; }
+    snapshot.forEach(child=>{
+      const p = child.val();
+      const card = document.createElement('div');
+      card.className='payment-card';
+      card.innerHTML=`
+        <p><strong>طريقة الدفع:</strong> ${p.method}</p>
+        <p><strong>رقم الهاتف:</strong> ${p.senderPhone}</p>
+        <p><strong>المبلغ:</strong> ${p.amount} جنيه</p>
+        ${p.imageBase64? `<img src="${p.imageBase64}" alt="صورة التحويل">` : ''}
+        <button class="confirm" onclick="confirmPayment('${child.key}')">تأكيد</button>
+        <button class="delete" onclick="deletePayment('${child.key}')">حذف</button>
+      `;
+      container.appendChild(card);
+    });
   });
-});
+}
 
 function confirmPayment(id){ db.ref(`payments/${id}`).update({confirmed:true}); }
 function deletePayment(id){ db.ref(`payments/${id}`).remove(); }
