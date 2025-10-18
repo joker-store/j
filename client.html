@@ -1,238 +1,127 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>نظام الدفع</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>رصيد العميل</title>
 <style>
-  body {
-    font-family: Tahoma, sans-serif;
-    direction: rtl;
-    background: linear-gradient(to bottom right, #1a1a1a, #333);
-    color: white;
-    margin: 0;
-    padding: 0;
-  }
-  header {
-    background: rgba(0,0,0,0.8);
-    padding: 15px;
-    text-align: center;
-  }
-  header h1 {
-    margin: 0;
-  }
-  #clientSection, #adminSection {
-    display: none;
-    padding: 20px;
-    max-width: 600px;
-    margin: auto;
-  }
-  .active {
-    display: block;
-  }
-  input, select {
-    width: 100%;
-    padding: 10px;
-    margin: 8px 0;
-    border-radius: 10px;
-    border: none;
-    text-align: right;
-  }
-  button {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
-  .sendBtn {
-    background: #28a745;
-    color: white;
-    width: 100%;
-    font-size: 16px;
-  }
-  .adminBtn {
-    background: #007bff;
-    color: white;
-    margin-top: 15px;
-  }
-  .payment {
-    background: rgba(255,255,255,0.1);
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    text-align: right;
-  }
-  .payment img {
-    max-width: 100%;
-    border-radius: 10px;
-    margin-top: 10px;
-  }
-  .confirm {
-    background: #28a745;
-    color: white;
-  }
-  .delete {
-    background: #dc3545;
-    color: white;
-    margin-right: 5px;
-  }
+body {
+  font-family: Tahoma, sans-serif;
+  direction: rtl;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: url('YOUR_BACKGROUND.jpg'); /* ضع الخلفية هنا */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.box {
+  background: rgba(255,255,255,0.1); /* شفافة */
+  padding: 20px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 350px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+h2 { margin-bottom: 15px; font-size: 1.5em; color: #fff; }
+h3 { margin: 10px 0; font-size: 1.2em; color: #fff; }
+h1 { font-size: 2.5em; color: green; margin: 10px 0; }
+
+/* أزرار الدفع */
+.payment-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+}
+.payment-buttons button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border: 2px solid white;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 14px;
+  color: white;
+  background: rgba(255,255,255,0.1); /* شفافة */
+  transition: transform 0.2s, background 0.2s;
+}
+.payment-buttons button:hover {
+  transform: scale(1.05);
+  background: rgba(255,255,255,0.2);
+}
+.payment-buttons img {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 10px;
+}
 </style>
 </head>
 <body>
+<div class="box">
+  <h2 id="clientName">اسم العميل</h2>
+  <h3>رصيدك الحالي:</h3>
+  <h1><span id="balance">0</span> جنيه</h1>
 
-<header>
-  <h1>💰 نظام الدفع</h1>
-  <button class="adminBtn" onclick="loginAdmin()">تسجيل الأدمن</button>
-</header>
+  <div class="payment-buttons">
+    <button onclick="goPayment('fcash')">
+      <img src="fcash_icon.png" alt="فودافون كاش">
+      فودافون كاش
+    </button>
 
-<!-- قسم العميل -->
-<section id="clientSection" class="active">
-  <h2>إرسال بيانات الدفع</h2>
-  <input type="text" id="clientId" placeholder="👤 اسم العميل" required />
-  <select id="method">
-    <option value="" disabled selected>اختر طريقة الدفع</option>
-    <option value="فودافون كاش">فودافون كاش</option>
-    <option value="اتصالات كاش">اتصالات كاش</option>
-    <option value="أورنج كاش">أورنج كاش</option>
-  </select>
-  <input type="text" id="phone" placeholder="📱 رقم المحول" required />
-  <input type="number" id="amount" placeholder="💰 المبلغ بالجنيه" required />
-  <input type="file" id="image" accept="image/*" />
-  <button class="sendBtn" onclick="sendPayment()">إرسال</button>
-</section>
+    <button onclick="goPayment('instapay')">
+      <img src="instapay_icon.png" alt="Instapay">
+      Instapay
+    </button>
+  </div>
+</div>
 
-<!-- قسم الأدمن -->
-<section id="adminSection">
-  <h2>لوحة تحكم الأدمن 👨‍💻</h2>
-  <div id="paymentList"></div>
-  <p id="noData" style="display:none;">لا يوجد طلبات حالياً</p>
-</section>
-
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-// إعداد Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
   authDomain: "ahmed-77878.firebaseapp.com",
   databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "ahmed-77878",
-  storageBucket: "ahmed-77878.appspot.com",
+  storageBucket: "ahmed-77878.firebasestorage.app",
   messagingSenderId: "566732207368",
   appId: "1:566732207368:web:d88477f62ecf475e2628bd"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 🧾 إرسال بيانات العميل
-function sendPayment() {
-  const clientId = document.getElementById('clientId').value.trim();
-  const method = document.getElementById('method').value;
-  const phone = document.getElementById('phone').value.trim();
-  const amount = document.getElementById('amount').value;
-  const imageFile = document.getElementById('image').files[0];
-  const date = new Date().toLocaleString();
+const clientId = localStorage.getItem('clientId');
+const clientName = localStorage.getItem('clientName');
 
-  if (!clientId || !method || !phone || !amount) {
-    alert("⚠️ من فضلك أكمل كل البيانات");
-    return;
-  }
-
-  // حفظ البيانات بدون تحميل صورة
-  const paymentRef = db.ref(`clients/${clientId}/payments`).push();
-  const paymentData = {
-    method: method,
-    senderPhone: phone,
-    amount: amount,
-    date: date,
-    confirmed: false
-  };
-
-  if (imageFile) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      paymentData.imageURL = e.target.result;
-      paymentRef.set(paymentData);
-      alert("✅ تم إرسال الطلب بنجاح");
-    };
-    reader.readAsDataURL(imageFile);
-  } else {
-    paymentRef.set(paymentData);
-    alert("✅ تم إرسال الطلب بنجاح");
-  }
-
-  // تفريغ الحقول بعد الإرسال
-  document.getElementById('clientId').value = '';
-  document.getElementById('method').value = '';
-  document.getElementById('phone').value = '';
-  document.getElementById('amount').value = '';
-  document.getElementById('image').value = '';
+if (!clientId) {
+  alert("الرجاء تسجيل الدخول أولاً");
+  window.location.href = "login.html";
 }
 
-// 👨‍💻 دخول الأدمن
-function loginAdmin() {
-  const pass = prompt("🛡️ أدخل كلمة سر الأدمن:");
-  if (pass === "admin123") { // ← تقدر تغير كلمة السر هنا
-    document.getElementById('clientSection').classList.remove('active');
-    document.getElementById('adminSection').classList.add('active');
-  } else if (pass) {
-    alert("❌ كلمة السر غير صحيحة");
-  }
-}
+document.getElementById('clientName').innerText = clientName;
 
-// 📡 عرض الطلبات للأدمن
-const listDiv = document.getElementById('paymentList');
-const noData = document.getElementById('noData');
-
-db.ref('clients').on('value', snapshot => {
-  listDiv.innerHTML = '';
-  if (!snapshot.exists()) {
-    noData.style.display = 'block';
-    return;
-  }
-  noData.style.display = 'none';
-
-  snapshot.forEach(clientSnap => {
-    const clientId = clientSnap.key;
-    const paymentsSnap = clientSnap.child('payments');
-
-    paymentsSnap.forEach(payment => {
-      const data = payment.val();
-      const id = payment.key;
-
-      const box = document.createElement('div');
-      box.className = 'payment';
-      box.innerHTML = `
-        <p><strong>👤 العميل:</strong> ${clientId}</p>
-        <p><strong>💳 الطريقة:</strong> ${data.method}</p>
-        <p><strong>📱 الهاتف:</strong> ${data.senderPhone}</p>
-        <p><strong>💰 المبلغ:</strong> ${data.amount} ج.م</p>
-        <p><strong>⏰:</strong> ${data.date}</p>
-        ${data.imageURL ? `<img src="${data.imageURL}">` : ''}
-        <p><strong>الحالة:</strong> ${data.confirmed ? '✅ تم التأكيد' : '⏳ قيد التأكيد'}</p>
-        ${!data.confirmed ? `<button class="confirm" onclick="confirmPayment('${clientId}', '${id}')">تأكيد</button>` : ''}
-        <button class="delete" onclick="deletePayment('${clientId}', '${id}')">حذف</button>
-      `;
-      listDiv.appendChild(box);
-    });
+// حساب الرصيد من الديون
+db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
+  let total = 0;
+  snapshot.forEach(child => {
+    const amount = parseFloat(child.val().amount);
+    if (!isNaN(amount)) total += amount;
   });
+  document.getElementById('balance').innerText = total;
 });
 
-// ✅ تأكيد الدفع
-function confirmPayment(clientId, id) {
-  db.ref(`clients/${clientId}/payments/${id}`).update({ confirmed: true })
-    .then(() => alert("✅ تم التأكيد"));
-}
-
-// 🗑️ حذف الدفع
-function deletePayment(clientId, id) {
-  if (confirm("هل تريد حذف هذا الطلب؟")) {
-    db.ref(`clients/${clientId}/payments/${id}`).remove()
-      .then(() => alert("🗑️ تم حذف الطلب"));
-  }
+function goPayment(method) {
+  localStorage.setItem('paymentMethod', method);
+  window.location.href = "payment.html"; // الانتقال لصفحة الدفع
 }
 </script>
 </body>
