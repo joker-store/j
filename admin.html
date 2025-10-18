@@ -3,75 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة الإدارة - التحويلات</title>
+<title>لوحة التحكم - الدفع</title>
 <style>
-body {
-  font-family: Tahoma, sans-serif;
-  direction: rtl;
-  text-align: center;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  background-image: url('YOUR_BACKGROUND.jpg');
-  background-size: cover;
-  background-position: center;
-  color: #fff;
-}
-.container {
-  background: rgba(0,0,0,0.5);
-  padding: 20px;
-  border-radius: 15px;
-  margin: 20px auto;
-  width: 95%;
-  max-width: 1000px;
-}
-h2 { margin-bottom: 20px; }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-th, td {
-  border: 1px solid #fff;
-  padding: 8px;
-  text-align: center;
-}
-th { background-color: rgba(255,255,255,0.2); }
-img { max-width: 80px; border-radius: 10px; }
-button {
-  padding: 5px 10px;
-  margin: 2px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-.confirm-btn { background-color: #28a745; color: white; }
-.delete-btn { background-color: #dc3545; color: white; }
+  body {
+    font-family: Tahoma, sans-serif;
+    direction: rtl;
+    background-image: url('YOUR_ADMIN_BACKGROUND.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+  h2 { margin-top: 20px; }
+  .payment {
+    background: rgba(0, 0, 0, 0.5);
+    margin: 15px auto;
+    padding: 15px;
+    border-radius: 10px;
+    max-width: 400px;
+  }
+  button {
+    margin: 5px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+  }
+  .confirm { background-color: #28a745; }
+  .delete { background-color: #dc3545; }
+  img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
 </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>لوحة الإدارة - التحويلات الجديدة</h2>
-  <table id="paymentsTable">
-    <thead>
-      <tr>
-        <th>اسم العميل</th>
-        <th>طريقة الدفع</th>
-        <th>رقم الهاتف المحول منه</th>
-        <th>المبلغ</th>
-        <th>الصورة</th>
-        <th>التاريخ</th>
-        <th>إجراءات</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+<h2>لوحة تحكم الدفع</h2>
+<div id="paymentsList"></div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
 <script>
 const firebaseConfig = {
@@ -85,54 +57,38 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const listDiv = document.getElementById('paymentsList');
 
-const paymentsTable = document.querySelector('#paymentsTable tbody');
+// 🟡 عرض الطلبات بشكل مباشر
+db.ref('payments').on('value', snapshot => {
+  listDiv.innerHTML = '';
+  snapshot.forEach(child => {
+    const data = child.val();
+    const id = child.key;
+    const box = document.createElement('div');
+    box.className = 'payment';
 
-// Listener فوري لكل العملاء والتحويلات
-db.ref('clients').on('child_added', clientSnap => {
-  const clientId = clientSnap.key;
-  const clientName = clientSnap.val().name;
-
-  db.ref(`clients/${clientId}/payments`).on('child_added', paymentSnap => {
-    const payment = paymentSnap.val();
-    if (payment.confirmed) return; // تجاهل المؤكد
-
-    const tr = document.createElement('tr');
-    tr.id = `row-${clientId}-${paymentSnap.key}`;
-    tr.innerHTML = `
-      <td>${clientName}</td>
-      <td>${payment.method}</td>
-      <td>${payment.senderPhone}</td>
-      <td>${payment.amount}</td>
-      <td>${payment.imageURL ? `<img src="${payment.imageURL}" />` : ''}</td>
-      <td>${payment.date}</td>
-      <td>
-        <button class="confirm-btn" onclick="confirmPayment('${clientId}','${paymentSnap.key}')">تأكيد</button>
-        <button class="delete-btn" onclick="deletePayment('${clientId}','${paymentSnap.key}')">حذف</button>
-      </td>
+    box.innerHTML = `
+      <p><strong>العميل:</strong> ${data.clientId}</p>
+      <p><strong>الطريقة:</strong> ${data.method}</p>
+      <p><strong>رقم الهاتف:</strong> ${data.senderPhone}</p>
+      <p><strong>المبلغ:</strong> ${data.amount} ج.م</p>
+      <p><strong>الوقت:</strong> ${data.date}</p>
+      ${data.imageURL ? `<img src="${data.imageURL}" alt="صورة التحويل">` : ''}
+      <p><strong>الحالة:</strong> ${data.confirmed ? '✅ تم التأكيد' : '⏳ قيد التأكيد'}</p>
+      <button class="confirm" onclick="confirmPayment('${id}')">تأكيد</button>
+      <button class="delete" onclick="deletePayment('${id}')">حذف</button>
     `;
-    paymentsTable.appendChild(tr);
-  });
-
-  // Listener لتحديث الصفوف عند التأكيد أو التعديل
-  db.ref(`clients/${clientId}/payments`).on('child_changed', paymentSnap => {
-    const tr = document.getElementById(`row-${clientId}-${paymentSnap.key}`);
-    if (tr) tr.remove(); // إزالة الصف إذا تم التأكيد
+    listDiv.appendChild(box);
   });
 });
 
-// تأكيد التحويل
-function confirmPayment(clientId, paymentId) {
-  db.ref(`clients/${clientId}/payments/${paymentId}`).update({ confirmed: true })
-    .then(() => alert('تم التأكيد!'))
-    .catch(err => console.error(err));
+function confirmPayment(id) {
+  db.ref(`payments/${id}`).update({ confirmed: true });
 }
 
-// حذف التحويل
-function deletePayment(clientId, paymentId) {
-  db.ref(`clients/${clientId}/payments/${paymentId}`).remove()
-    .then(() => alert('تم الحذف!'))
-    .catch(err => console.error(err));
+function deletePayment(id) {
+  db.ref(`payments/${id}`).remove();
 }
 </script>
 
