@@ -1,1 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم الأدمن</title>
+<style>
+body {
+  font-family: Tahoma;
+  background: url('YOUR_BACKGROUND.jpg') center/cover no-repeat;
+  direction: rtl;
+  text-align: center;
+  margin: 0; padding: 20px;
+  color: white;
+}
+.container {
+  max-width: 600px;
+  margin: auto;
+  background: rgba(0,0,0,0.4);
+  padding: 20px;
+  border-radius: 15px;
+}
+.request {
+  background: rgba(255,255,255,0.1);
+  margin: 15px 0;
+  padding: 10px;
+  border-radius: 10px;
+}
+.request img {
+  max-width: 100%;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+button {
+  margin: 5px;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.confirm { background: green; color: white; }
+.delete { background: red; color: white; }
+</style>
+</head>
+<body>
 
+<div class="container">
+  <h2>طلبات الدفع</h2>
+  <div id="requests"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
+  authDomain: "ahmed-77878.firebaseapp.com",
+  databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ahmed-77878",
+  storageBucket: "ahmed-77878.appspot.com",
+  messagingSenderId: "566732207368",
+  appId: "1:566732207368:web:d88477f62ecf475e2628bd"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+db.ref("payments").on("value", snapshot => {
+  const container = document.getElementById('requests');
+  container.innerHTML = "";
+  if (!snapshot.exists()) {
+    container.innerHTML = "<p>🚫 لا يوجد طلبات حالياً</p>";
+    return;
+  }
+
+  snapshot.forEach(child => {
+    const data = child.val();
+    const div = document.createElement('div');
+    div.className = "request";
+    div.innerHTML = `
+      <p>📱 رقم الهاتف: ${data.senderPhone}</p>
+      <p>💰 المبلغ: ${data.amount} جنيه</p>
+      <p>🕒 التاريخ: ${data.date}</p>
+      <img src="${data.image}" alt="صورة التحويل">
+      <br>
+      <button class="confirm" onclick="confirmRequest('${child.key}')">✅ تأكيد</button>
+      <button class="delete" onclick="deleteRequest('${child.key}')">🗑️ حذف</button>
+    `;
+    container.appendChild(div);
+  });
+});
+
+function confirmRequest(key) {
+  db.ref("payments/" + key).update({ confirmed: true });
+  alert("✅ تم تأكيد الدفع");
+}
+
+function deleteRequest(key) {
+  db.ref("payments/" + key).remove();
+  alert("🗑️ تم حذف الطلب");
+}
+</script>
+</body>
+</html>
