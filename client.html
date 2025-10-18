@@ -3,88 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>رصيد العميل</title>
+<title>إرسال التحويل</title>
 <style>
-body {
-  font-family: Tahoma, sans-serif;
-  direction: rtl;
-  text-align: center;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-image: url('YOUR_BACKGROUND.jpg'); /* ضع الخلفية هنا */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-.box {
-  background: rgba(255,255,255,0.1); /* شفافة */
-  padding: 20px;
-  border-radius: 15px;
-  width: 90%;
-  max-width: 350px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
-h2 { margin-bottom: 15px; font-size: 1.5em; color: #fff; }
-h3 { margin: 10px 0; font-size: 1.2em; color: #fff; }
-h1 { font-size: 2.5em; color: green; margin: 10px 0; }
-
-/* أزرار الدفع */
-.payment-buttons {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 20px;
-}
-.payment-buttons button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 120px;
-  height: 120px;
-  border: 2px solid white;
-  border-radius: 15px;
-  cursor: pointer;
-  font-size: 14px;
-  color: white;
-  background: rgba(255,255,255,0.1); /* شفافة */
-  transition: transform 0.2s, background 0.2s;
-}
-.payment-buttons button:hover {
-  transform: scale(1.05);
-  background: rgba(255,255,255,0.2);
-}
-.payment-buttons img {
-  width: 50px;
-  height: 50px;
-  margin-bottom: 10px;
-}
+  body {
+    font-family: Tahoma, sans-serif;
+    direction: rtl;
+    text-align: center;
+    background-image: url('YOUR_BACKGROUND.jpg');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+  .box {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 400px;
+  }
+  input, button {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 10px;
+    border: none;
+    font-size: 1em;
+  }
+  button {
+    background-color: #28a745;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  button:hover { background-color: #218838; }
+  #loadingMsg { color: white; margin-top: 10px; }
 </style>
 </head>
 <body>
+
 <div class="box">
-  <h2 id="clientName">اسم العميل</h2>
-  <h3>رصيدك الحالي:</h3>
-  <h1><span id="balance">0</span> جنيه</h1>
-
-  <div class="payment-buttons">
-    <button onclick="goPayment('fcash')">
-      <img src="fcash_icon.png" alt="فودافون كاش">
-      فودافون كاش
-    </button>
-
-    <button onclick="goPayment('instapay')">
-      <img src="instapay_icon.png" alt="Instapay">
-      Instapay
-    </button>
-  </div>
+  <h2>إرسال التحويل</h2>
+  <p>طريقة الدفع: <span id="paymentMethod">...</span></p>
+  <input type="text" id="senderPhone" placeholder="رقم الهاتف المحول منه" required>
+  <input type="number" id="amount" placeholder="المبلغ المحول" required>
+  <input type="file" id="transferImage" accept="image/*">
+  <button onclick="submitPayment()">إرسال</button>
+  <p id="loadingMsg"></p>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
 <script>
 const firebaseConfig = {
@@ -92,37 +66,55 @@ const firebaseConfig = {
   authDomain: "ahmed-77878.firebaseapp.com",
   databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "ahmed-77878",
-  storageBucket: "ahmed-77878.firebasestorage.app",
+  storageBucket: "ahmed-77878.appspot.com",
   messagingSenderId: "566732207368",
   appId: "1:566732207368:web:d88477f62ecf475e2628bd"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const storage = firebase.storage();
 
-const clientId = localStorage.getItem('clientId');
-const clientName = localStorage.getItem('clientName');
+// استدعاء طريقة الدفع من localStorage
+const clientId = localStorage.getItem('clientId') || `client_${Date.now()}`;
+const paymentMethod = localStorage.getItem('paymentMethod') || "غير محدد";
+document.getElementById('paymentMethod').innerText = paymentMethod;
 
-if (!clientId) {
-  alert("الرجاء تسجيل الدخول أولاً");
-  window.location.href = "login.html";
-}
+function submitPayment() {
+  const senderPhone = document.getElementById('senderPhone').value.trim();
+  const amount = parseFloat(document.getElementById('amount').value);
+  const imageFile = document.getElementById('transferImage').files[0];
 
-document.getElementById('clientName').innerText = clientName;
+  if (!senderPhone || !amount) {
+    alert("ادخل جميع البيانات المطلوبة!");
+    return;
+  }
 
-// حساب الرصيد من الديون
-db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
-  let total = 0;
-  snapshot.forEach(child => {
-    const amount = parseFloat(child.val().amount);
-    if (!isNaN(amount)) total += amount;
-  });
-  document.getElementById('balance').innerText = total;
-});
+  const paymentRef = db.ref(`payments`).push();
+  const paymentData = {
+    clientId,
+    method: paymentMethod,
+    senderPhone,
+    amount,
+    date: new Date().toLocaleString(),
+    confirmed: false
+  };
 
-function goPayment(method) {
-  localStorage.setItem('paymentMethod', method);
-  window.location.href = "payment.html"; // الانتقال لصفحة الدفع
+  // ✅ رسالة فورية
+  document.getElementById('loadingMsg').innerText = "✅ تم الإرسال بنجاح";
+  setTimeout(() => window.location.href = "client.html", 1000);
+
+  // 📝 رفع البيانات
+  paymentRef.set(paymentData).then(() => {
+    if (imageFile) {
+      const storageRef = storage.ref(`payments/${paymentRef.key}_${imageFile.name}`);
+      storageRef.put(imageFile)
+        .then(snapshot => snapshot.ref.getDownloadURL())
+        .then(url => paymentRef.update({ imageURL: url }))
+        .catch(err => console.error("خطأ في رفع الصورة:", err));
+    }
+  }).catch(err => console.error("خطأ في حفظ الدفع:", err));
 }
 </script>
+
 </body>
 </html>
