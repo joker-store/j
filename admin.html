@@ -3,50 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة تحكم الأدمن</title>
+<title>لوحة الأدمن</title>
 <style>
-body {
-  font-family: Tahoma;
-  background: url('YOUR_BACKGROUND.jpg') center/cover no-repeat;
-  direction: rtl;
-  text-align: center;
-  margin: 0; padding: 20px;
-  color: white;
-}
-.container {
-  max-width: 600px;
-  margin: auto;
-  background: rgba(0,0,0,0.4);
-  padding: 20px;
-  border-radius: 15px;
-}
-.request {
-  background: rgba(255,255,255,0.1);
-  margin: 15px 0;
-  padding: 10px;
-  border-radius: 10px;
-}
-.request img {
-  max-width: 100%;
-  border-radius: 10px;
-  margin-top: 10px;
-}
-button {
-  margin: 5px;
-  padding: 8px 15px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.confirm { background: green; color: white; }
-.delete { background: red; color: white; }
+body { font-family: Tahoma, sans-serif; direction: rtl; text-align: center; background: #f0f0f0; }
+.container { width: 95%; max-width: 600px; margin: 20px auto; }
+.payment-card { background: #fff; padding: 15px; margin: 10px 0; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+.payment-card img { max-width: 100%; margin: 10px 0; }
+button { margin: 5px; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
+.confirm { background: #28a745; color: #fff; }
+.delete { background: #dc3545; color: #fff; }
 </style>
 </head>
 <body>
-
-<div class="container">
-  <h2>طلبات الدفع</h2>
-  <div id="requests"></div>
+<h2>طلبات التحويل الجديدة</h2>
+<div class="container" id="paymentsContainer">
+  <p>جارٍ تحميل الطلبات...</p>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -65,39 +36,37 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-db.ref("payments").on("value", snapshot => {
-  const container = document.getElementById('requests');
-  container.innerHTML = "";
-  if (!snapshot.exists()) {
-    container.innerHTML = "<p>🚫 لا يوجد طلبات حالياً</p>";
+const container = document.getElementById('paymentsContainer');
+container.innerHTML = '';
+
+db.ref('payments').on('value', snapshot => {
+  container.innerHTML = '';
+  if(!snapshot.exists()) {
+    container.innerHTML = "<p>لا يوجد طلبات حالياً</p>";
     return;
   }
-
   snapshot.forEach(child => {
-    const data = child.val();
-    const div = document.createElement('div');
-    div.className = "request";
-    div.innerHTML = `
-      <p>📱 رقم الهاتف: ${data.senderPhone}</p>
-      <p>💰 المبلغ: ${data.amount} جنيه</p>
-      <p>🕒 التاريخ: ${data.date}</p>
-      <img src="${data.image}" alt="صورة التحويل">
-      <br>
-      <button class="confirm" onclick="confirmRequest('${child.key}')">✅ تأكيد</button>
-      <button class="delete" onclick="deleteRequest('${child.key}')">🗑️ حذف</button>
+    const p = child.val();
+    const card = document.createElement('div');
+    card.className = 'payment-card';
+    card.innerHTML = `
+      <p><strong>طريقة الدفع:</strong> ${p.method}</p>
+      <p><strong>رقم الهاتف:</strong> ${p.senderPhone}</p>
+      <p><strong>المبلغ:</strong> ${p.amount} جنيه</p>
+      ${p.imageBase64 ? `<img src="${p.imageBase64}" alt="صورة التحويل">` : ''}
+      <button class="confirm" onclick="confirmPayment('${child.key}')">تأكيد</button>
+      <button class="delete" onclick="deletePayment('${child.key}')">حذف</button>
     `;
-    container.appendChild(div);
+    container.appendChild(card);
   });
 });
 
-function confirmRequest(key) {
-  db.ref("payments/" + key).update({ confirmed: true });
-  alert("✅ تم تأكيد الدفع");
+function confirmPayment(id) {
+  db.ref(`payments/${id}`).update({ confirmed: true });
 }
 
-function deleteRequest(key) {
-  db.ref("payments/" + key).remove();
-  alert("🗑️ تم حذف الطلب");
+function deletePayment(id) {
+  db.ref(`payments/${id}`).remove();
 }
 </script>
 </body>
