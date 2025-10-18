@@ -8,47 +8,73 @@
   body {
     font-family: Tahoma, sans-serif;
     direction: rtl;
-    background-image: url('YOUR_ADMIN_BACKGROUND.jpg');
+    text-align: center;
+    background-image: url('YOUR_BACKGROUND.jpg'); /* ضع هنا رابط الخلفية */
     background-size: cover;
     background-position: center;
-    color: white;
-    text-align: center;
     margin: 0;
     padding: 0;
   }
-  h2 { margin-top: 20px; }
-  .payment {
-    background: rgba(0, 0, 0, 0.5);
-    margin: 15px auto;
+  h1 {
+    color: white;
+    background: rgba(0,0,0,0.6);
     padding: 15px;
+    margin: 0;
+  }
+  #paymentList {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+    max-width: 600px;
+    margin: auto;
+  }
+  .payment {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 15px;
+    padding: 15px;
+    text-align: right;
+    color: white;
+  }
+  .payment img {
+    max-width: 100%;
+    margin-top: 10px;
     border-radius: 10px;
-    max-width: 400px;
   }
   button {
-    margin: 5px;
-    padding: 10px 15px;
+    margin-top: 10px;
+    margin-left: 5px;
+    padding: 8px 15px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
+    font-size: 14px;
     cursor: pointer;
     color: white;
   }
-  .confirm { background-color: #28a745; }
-  .delete { background-color: #dc3545; }
-  img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
-  #noData { margin-top: 20px; font-size: 1.2em; color: #ffcc00; }
+  .confirm {
+    background: #28a745;
+  }
+  .delete {
+    background: #dc3545;
+  }
+  #noData {
+    color: white;
+    margin-top: 30px;
+  }
 </style>
 </head>
 <body>
 
-<h2>لوحة تحكم الدفع</h2>
-<div id="paymentsList"></div>
-<p id="noData" style="display:none;">🚫 لا توجد أي طلبات حالياً</p>
+<h1>لوحة تحكم التحويلات 💰</h1>
+<div id="paymentList"></div>
+<p id="noData" style="display:none;">لا يوجد طلبات حالياً</p>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-// ✅ إعدادات Firebase
+// 🔥 إعداد Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
   authDomain: "ahmed-77878.firebaseapp.com",
@@ -58,14 +84,14 @@ const firebaseConfig = {
   messagingSenderId: "566732207368",
   appId: "1:566732207368:web:d88477f62ecf475e2628bd"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const listDiv = document.getElementById('paymentsList');
+
+const listDiv = document.getElementById('paymentList');
 const noData = document.getElementById('noData');
 
-// ✅ عرض الطلبات
-db.ref('payments').on('value', snapshot => {
+// 🟡 قراءة جميع الطلبات من جميع العملاء
+db.ref('clients').on('value', snapshot => {
   listDiv.innerHTML = '';
   if (!snapshot.exists()) {
     noData.style.display = 'block';
@@ -73,48 +99,48 @@ db.ref('payments').on('value', snapshot => {
   }
   noData.style.display = 'none';
 
-  snapshot.forEach(child => {
-    const data = child.val();
-    const id = child.key;
+  snapshot.forEach(clientSnap => {
+    const clientId = clientSnap.key;
+    const paymentsSnap = clientSnap.child('payments');
 
-    const box = document.createElement('div');
-    box.className = 'payment';
+    paymentsSnap.forEach(payment => {
+      const data = payment.val();
+      const id = payment.key;
 
-    box.innerHTML = `
-      <p><strong>📌 العميل:</strong> ${data.clientId || "غير معروف"}</p>
-      <p><strong>💳 الطريقة:</strong> ${data.method || "غير محددة"}</p>
-      <p><strong>📱 رقم الهاتف:</strong> ${data.senderPhone || "-"}</p>
-      <p><strong>💰 المبلغ:</strong> ${data.amount || 0} ج.م</p>
-      <p><strong>⏰ الوقت:</strong> ${data.date || "-"}</p>
-      ${data.imageURL ? `<img src="${data.imageURL}" alt="صورة التحويل">` : ''}
-      <p><strong>الحالة:</strong> ${data.confirmed ? '✅ تم التأكيد' : '⏳ قيد التأكيد'}</p>
-      <button class="confirm" onclick="confirmPayment('${id}')">تأكيد</button>
-      <button class="delete" onclick="deletePayment('${id}')">حذف</button>
-    `;
-    listDiv.appendChild(box);
+      const box = document.createElement('div');
+      box.className = 'payment';
+
+      box.innerHTML = `
+        <p><strong>👤 العميل:</strong> ${clientId}</p>
+        <p><strong>💳 الطريقة:</strong> ${data.method || "غير محددة"}</p>
+        <p><strong>📱 رقم الهاتف:</strong> ${data.senderPhone || "-"}</p>
+        <p><strong>💰 المبلغ:</strong> ${data.amount || 0} ج.م</p>
+        <p><strong>⏰ الوقت:</strong> ${data.date || "-"}</p>
+        ${data.imageURL ? `<img src="${data.imageURL}" alt="صورة التحويل">` : ''}
+        <p><strong>الحالة:</strong> ${data.confirmed ? '✅ تم التأكيد' : '⏳ قيد التأكيد'}</p>
+        ${!data.confirmed ? `<button class="confirm" onclick="confirmPayment('${clientId}', '${id}')">تأكيد</button>` : ''}
+        <button class="delete" onclick="deletePayment('${clientId}', '${id}')">حذف</button>
+      `;
+      listDiv.appendChild(box);
+    });
   });
-}, error => {
-  console.error("❌ خطأ في تحميل البيانات:", error);
-  noData.style.display = 'block';
-  noData.innerText = "⚠️ حدث خطأ أثناء تحميل البيانات";
 });
 
 // ✅ تأكيد الدفع
-function confirmPayment(id) {
-  db.ref(`payments/${id}`).update({ confirmed: true })
+function confirmPayment(clientId, id) {
+  db.ref(`clients/${clientId}/payments/${id}`).update({ confirmed: true })
     .then(() => alert("✅ تم تأكيد الدفع"))
     .catch(err => alert("❌ خطأ: " + err.message));
 }
 
 // 🗑️ حذف الدفع
-function deletePayment(id) {
+function deletePayment(clientId, id) {
   if (confirm("هل تريد حذف هذا الدفع؟")) {
-    db.ref(`payments/${id}`).remove()
+    db.ref(`clients/${clientId}/payments/${id}`).remove()
       .then(() => alert("🗑️ تم حذف الطلب"))
       .catch(err => alert("❌ خطأ: " + err.message));
   }
 }
 </script>
-
 </body>
 </html>
