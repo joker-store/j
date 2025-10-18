@@ -15,13 +15,13 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url('YOUR_BACKGROUND.jpg'); /* ضع الخلفية هنا */
+  background-image: url('YOUR_BACKGROUND.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 .box {
-  background: rgba(255,255,255,0.1); /* شفافة */
+  background: rgba(255,255,255,0.1);
   padding: 20px;
   border-radius: 15px;
   width: 90%;
@@ -32,7 +32,6 @@ h2 { margin-bottom: 15px; font-size: 1.5em; color: #fff; }
 h3 { margin: 10px 0; font-size: 1.2em; color: #fff; }
 h1 { font-size: 2.5em; color: green; margin: 10px 0; }
 
-/* أزرار الدفع */
 .payment-buttons {
   display: flex;
   justify-content: space-around;
@@ -50,7 +49,7 @@ h1 { font-size: 2.5em; color: green; margin: 10px 0; }
   cursor: pointer;
   font-size: 14px;
   color: white;
-  background: rgba(255,255,255,0.1); /* شفافة */
+  background: rgba(255,255,255,0.1);
   transition: transform 0.2s, background 0.2s;
 }
 .payment-buttons button:hover {
@@ -61,6 +60,21 @@ h1 { font-size: 2.5em; color: green; margin: 10px 0; }
   width: 50px;
   height: 50px;
   margin-bottom: 10px;
+}
+
+/* زر الأدمن */
+#adminBtn {
+  margin-top: 25px;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+#adminBtn:hover {
+  background: rgba(255,255,255,0.3);
 }
 </style>
 </head>
@@ -81,6 +95,9 @@ h1 { font-size: 2.5em; color: green; margin: 10px 0; }
       Instapay
     </button>
   </div>
+
+  <!-- إضافة زر أدمن -->
+  <button id="adminBtn" onclick="openAdminLogin()">🔑 أدمن</button>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -109,7 +126,7 @@ if (!clientId) {
 
 document.getElementById('clientName').innerText = clientName;
 
-// حساب الرصيد من الديون
+// حساب الرصيد
 db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
   let total = 0;
   snapshot.forEach(child => {
@@ -121,7 +138,19 @@ db.ref(`clients/${clientId}/debts`).on('value', snapshot => {
 
 function goPayment(method) {
   localStorage.setItem('paymentMethod', method);
-  window.location.href = "payment.html"; // الانتقال لصفحة الدفع
+  window.location.href = "payment.html";
+}
+
+// ✅ تسجيل دخول الأدمن
+function openAdminLogin() {
+  const pass = prompt("أدخل كلمة مرور الأدمن:");
+  const adminPassword = "123456"; // 🔐 غيرها لكلمة السر اللي عايزها
+
+  if (pass === adminPassword) {
+    window.location.href = "admin.html";
+  } else if (pass !== null) {
+    alert("كلمة المرور غير صحيحة ❌");
+  }
 }
 </script>
 </body>
