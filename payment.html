@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>طرق الدفع + الأدمن</title>
+<title>A7med_Ashraf</title>
 <style>
 body {
   font-family: Tahoma, sans-serif;
@@ -78,6 +78,7 @@ button.delete { background: #dc3545; color: #fff; }
   <!-- نموذج الدفع -->
   <div id="paymentForm">
     <h3>إرسال التحويل: <span id="selectedMethod"></span></h3>
+    <h3>01019728653</h3>
     <input type="text" id="senderPhone" placeholder="رقم الهاتف المحول منه">
     <input type="number" id="amount" placeholder="المبلغ المحول">
     <input type="file" id="transferImage" accept="image/*">
@@ -202,3 +203,4 @@ function deletePayment(id){ db.ref(`payments/${id}`).remove(); }
 </script>
 </body>
 </html>
+
