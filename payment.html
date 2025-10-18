@@ -94,6 +94,7 @@ button.delete { background: #dc3545; color: #fff; }
 
 <div class="container">
   <h2>طرق الدفع</h2>
+  <h2>سيتم التحقق من الدفع وخصم المبلغ بعد ساعة بحد اقصى</h2>
   <div class="payment-buttons">
     <button onclick="openPayment('فودافون كاش')">
       <img src="fcash_icon.png" alt="فودافون كاش">فودافون كاش
@@ -232,3 +233,4 @@ function deletePayment(id){ db.ref(`payments/${id}`).remove(); }
 </script>
 </body>
 </html>
+
