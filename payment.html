@@ -161,34 +161,55 @@ function openPayment(method){
 }
 
 function submitPayment(){
+  const name = document.getElementById('name').value.trim();
   const senderPhone = document.getElementById('senderPhone').value.trim();
   const amount = parseFloat(document.getElementById('amount').value);
   const imageFile = document.getElementById('transferImage').files[0];
-  if(!senderPhone || !amount) return alert("ادخل جميع البيانات المطلوبة!");
 
-  const reader = new FileReader();
-  reader.onload = function(e){
-    const base64Image = imageFile? e.target.result : null;
-    const paymentRef = db.ref('payments').push();
-    paymentRef.set({
-      method: selectedMethod,
-      senderPhone,
-      amount,
-      date: new Date().toLocaleString(),
-      confirmed:false,
-      imageBase64: base64Image
-    });
-    document.getElementById('loadingMsg').innerText="تم الإرسال!";
-    setTimeout(()=>{
-      document.getElementById('paymentForm').style.display='none';
-      document.getElementById('loadingMsg').innerText="";
-      document.getElementById('senderPhone').value="";
-      document.getElementById('amount').value="";
-      document.getElementById('transferImage').value="";
-    },500);
-  };
-  if(imageFile) reader.readAsDataURL(imageFile);
-  else reader.onload();
+  if(!selectedMethod){
+    alert("اختر طريقة الدفع أولاً");
+    return;
+  }
+
+  if(!name || !senderPhone || !amount){
+    alert("ادخل جميع البيانات المطلوبة!");
+    return;
+  }
+
+  if(imageFile){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      sendPaymentToDB(name, senderPhone, amount, e.target.result);
+    };
+    reader.readAsDataURL(imageFile);
+  } else {
+    sendPaymentToDB(name, senderPhone, amount, null);
+  }
+}
+
+function sendPaymentToDB(name, senderPhone, amount, base64Image){
+  const paymentRef = db.ref('payments').push();
+  paymentRef.set({
+    method: selectedMethod,
+    name,
+    senderPhone,
+    amount,
+    date: new Date().toLocaleString(),
+    confirmed:false,
+    imageBase64: base64Image
+  });
+
+  document.getElementById('loadingMsg').innerText="تم الإرسال!";
+  setTimeout(()=>{
+    document.getElementById('paymentForm').style.display='none';
+    document.getElementById('loadingMsg').innerText="";
+    document.getElementById('name').value="";
+    document.getElementById('senderPhone').value="";
+    document.getElementById('amount').value="";
+    document.getElementById('transferImage').value="";
+    document.getElementById('selectedMethod').innerText="";
+    selectedMethod = "";
+  },500);
 }
 
 // أيقونة الأدمن
@@ -235,5 +256,3 @@ function deletePayment(id){ db.ref(`payments/${id}`).remove(); }
 </script>
 </body>
 </html>
-
-
