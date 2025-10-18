@@ -9,23 +9,25 @@
     font-family: Tahoma, sans-serif;
     direction: rtl;
     text-align: center;
-    background-image: url('YOUR_BACKGROUND.jpg');
-    background-size: cover;
-    background-position: center;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    margin: 0;
+    background-image: url('YOUR_BACKGROUND.jpg'); /* ضع خلفية مناسبة */
+    background-size: cover;
+    background-position: center;
   }
   .box {
     background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(10px);
     padding: 20px;
     border-radius: 15px;
     width: 90%;
     max-width: 400px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   }
+  h2, p { color: #fff; }
   input, button {
     width: 90%;
     padding: 10px;
@@ -33,7 +35,9 @@
     border-radius: 10px;
     border: none;
     font-size: 1em;
+    text-align: center;
   }
+  input[type="file"] { background: rgba(255,255,255,0.2); color: white; }
   button {
     background-color: #28a745;
     color: white;
@@ -41,80 +45,82 @@
     transition: 0.2s;
   }
   button:hover { background-color: #218838; }
-  #loadingMsg { color: white; margin-top: 10px; }
+  #loadingMsg { color: #fff; margin-top: 10px; font-weight: bold; }
 </style>
 </head>
 <body>
-
-<div class="box">
-  <h2>إرسال التحويل</h2>
-  <p>طريقة الدفع: <span id="paymentMethod">...</span></p>
-  <input type="text" id="senderPhone" placeholder="رقم الهاتف المحول منه" required>
-  <input type="number" id="amount" placeholder="المبلغ المحول" required>
-  <input type="file" id="transferImage" accept="image/*">
-  <button onclick="submitPayment()">إرسال</button>
-  <p id="loadingMsg"></p>
-</div>
+  <div class="box">
+    <h2>إرسال التحويل</h2>
+    <p>طريقة الدفع: <span id="paymentMethod">...</span></p>
+    <input type="text" id="senderPhone" placeholder="رقم الهاتف المحول منه" required>
+    <input type="number" id="amount" placeholder="المبلغ المحول" required>
+    <input type="file" id="transferImage" accept="image/*">
+    <button onclick="submitPayment()">إرسال</button>
+    <p id="loadingMsg"></p>
+  </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
-  authDomain: "ahmed-77878.firebaseapp.com",
-  databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "ahmed-77878",
-  storageBucket: "ahmed-77878.appspot.com",
-  messagingSenderId: "566732207368",
-  appId: "1:566732207368:web:d88477f62ecf475e2628bd"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const storage = firebase.storage();
-
-// استدعاء طريقة الدفع من localStorage
-const clientId = localStorage.getItem('clientId') || `client_${Date.now()}`;
-const paymentMethod = localStorage.getItem('paymentMethod') || "غير محدد";
-document.getElementById('paymentMethod').innerText = paymentMethod;
-
-function submitPayment() {
-  const senderPhone = document.getElementById('senderPhone').value.trim();
-  const amount = parseFloat(document.getElementById('amount').value);
-  const imageFile = document.getElementById('transferImage').files[0];
-
-  if (!senderPhone || !amount) {
-    alert("ادخل جميع البيانات المطلوبة!");
-    return;
-  }
-
-  const paymentRef = db.ref(`payments`).push();
-  const paymentData = {
-    clientId,
-    method: paymentMethod,
-    senderPhone,
-    amount,
-    date: new Date().toLocaleString(),
-    confirmed: false
+  // 🔥 إعداد Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
+    authDomain: "ahmed-77878.firebaseapp.com",
+    databaseURL: "https://ahmed-77878-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "ahmed-77878",
+    storageBucket: "ahmed-77878.appspot.com",
+    messagingSenderId: "566732207368",
+    appId: "1:566732207368:web:d88477f62ecf475e2628bd"
   };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const storage = firebase.storage();
 
-  // ✅ رسالة فورية
-  document.getElementById('loadingMsg').innerText = "✅ تم الإرسال بنجاح";
-  setTimeout(() => window.location.href = "client.html", 1000);
+  const clientId = localStorage.getItem('clientId');
+  const clientName = localStorage.getItem('clientName');
+  const paymentMethod = localStorage.getItem('paymentMethod');
+  document.getElementById('paymentMethod').innerText = paymentMethod;
 
-  // 📝 رفع البيانات
-  paymentRef.set(paymentData).then(() => {
-    if (imageFile) {
-      const storageRef = storage.ref(`payments/${paymentRef.key}_${imageFile.name}`);
-      storageRef.put(imageFile)
+  function submitPayment() {
+    const senderPhone = document.getElementById('senderPhone').value.trim();
+    const amount = document.getElementById('amount').value.trim();
+    const imageFile = document.getElementById('transferImage').files[0];
+
+    if (!senderPhone || !amount) {
+      alert("من فضلك أدخل كل البيانات المطلوبة");
+      return;
+    }
+
+    // إظهار رسالة فورية للعميل ✅
+    document.getElementById('loadingMsg').innerText = "✅ تم الإرسال بنجاح";
+    setTimeout(() => window.location.href = "client.html", 1000);
+
+    // حفظ البيانات في الخلفية
+    const paymentRef = db.ref(`payments`).push();
+    const paymentData = {
+      clientId,
+      clientName,
+      method: paymentMethod,
+      senderPhone,
+      amount,
+      date: new Date().toLocaleString(),
+      confirmed: false
+    };
+    paymentRef.set(paymentData)
+    .then(() => {
+      // لو فيه صورة
+      if (imageFile) {
+        const storageRef = storage.ref(`payments/${paymentRef.key}_${imageFile.name}`);
+        storageRef.put(imageFile)
         .then(snapshot => snapshot.ref.getDownloadURL())
         .then(url => paymentRef.update({ imageURL: url }))
         .catch(err => console.error("خطأ في رفع الصورة:", err));
-    }
-  }).catch(err => console.error("خطأ في حفظ الدفع:", err));
-}
+      }
+    })
+    .catch(err => console.error("خطأ في الحفظ:", err));
+  }
 </script>
-
 </body>
 </html>
