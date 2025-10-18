@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة التحكم - الدفع</title>
+<title>لوحة تحكم الدفع</title>
 <style>
   body {
     font-family: Tahoma, sans-serif;
@@ -35,17 +35,20 @@
   .confirm { background-color: #28a745; }
   .delete { background-color: #dc3545; }
   img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
+  #noData { margin-top: 20px; font-size: 1.2em; color: #ffcc00; }
 </style>
 </head>
 <body>
 
 <h2>لوحة تحكم الدفع</h2>
 <div id="paymentsList"></div>
+<p id="noData" style="display:none;">🚫 لا توجد أي طلبات حالياً</p>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
+// ✅ إعدادات Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
   authDomain: "ahmed-77878.firebaseapp.com",
@@ -55,25 +58,34 @@ const firebaseConfig = {
   messagingSenderId: "566732207368",
   appId: "1:566732207368:web:d88477f62ecf475e2628bd"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const listDiv = document.getElementById('paymentsList');
+const noData = document.getElementById('noData');
 
-// 🟡 عرض الطلبات بشكل مباشر
+// ✅ عرض الطلبات
 db.ref('payments').on('value', snapshot => {
   listDiv.innerHTML = '';
+  if (!snapshot.exists()) {
+    noData.style.display = 'block';
+    return;
+  }
+  noData.style.display = 'none';
+
   snapshot.forEach(child => {
     const data = child.val();
     const id = child.key;
+
     const box = document.createElement('div');
     box.className = 'payment';
 
     box.innerHTML = `
-      <p><strong>العميل:</strong> ${data.clientId}</p>
-      <p><strong>الطريقة:</strong> ${data.method}</p>
-      <p><strong>رقم الهاتف:</strong> ${data.senderPhone}</p>
-      <p><strong>المبلغ:</strong> ${data.amount} ج.م</p>
-      <p><strong>الوقت:</strong> ${data.date}</p>
+      <p><strong>📌 العميل:</strong> ${data.clientId || "غير معروف"}</p>
+      <p><strong>💳 الطريقة:</strong> ${data.method || "غير محددة"}</p>
+      <p><strong>📱 رقم الهاتف:</strong> ${data.senderPhone || "-"}</p>
+      <p><strong>💰 المبلغ:</strong> ${data.amount || 0} ج.م</p>
+      <p><strong>⏰ الوقت:</strong> ${data.date || "-"}</p>
       ${data.imageURL ? `<img src="${data.imageURL}" alt="صورة التحويل">` : ''}
       <p><strong>الحالة:</strong> ${data.confirmed ? '✅ تم التأكيد' : '⏳ قيد التأكيد'}</p>
       <button class="confirm" onclick="confirmPayment('${id}')">تأكيد</button>
@@ -81,14 +93,26 @@ db.ref('payments').on('value', snapshot => {
     `;
     listDiv.appendChild(box);
   });
+}, error => {
+  console.error("❌ خطأ في تحميل البيانات:", error);
+  noData.style.display = 'block';
+  noData.innerText = "⚠️ حدث خطأ أثناء تحميل البيانات";
 });
 
+// ✅ تأكيد الدفع
 function confirmPayment(id) {
-  db.ref(`payments/${id}`).update({ confirmed: true });
+  db.ref(`payments/${id}`).update({ confirmed: true })
+    .then(() => alert("✅ تم تأكيد الدفع"))
+    .catch(err => alert("❌ خطأ: " + err.message));
 }
 
+// 🗑️ حذف الدفع
 function deletePayment(id) {
-  db.ref(`payments/${id}`).remove();
+  if (confirm("هل تريد حذف هذا الدفع؟")) {
+    db.ref(`payments/${id}`).remove()
+      .then(() => alert("🗑️ تم حذف الطلب"))
+      .catch(err => alert("❌ خطأ: " + err.message));
+  }
 }
 </script>
 
