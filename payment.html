@@ -56,12 +56,40 @@ button.delete { background: #dc3545; color: #fff; }
 
 #paymentForm { display: none; }
 #adminPanel { display: none; margin-top:20px; }
-#adminIcon { position: fixed; top: 20px; left: 20px; cursor: pointer; width: 50px; height:50px; }
-#passwordModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; }
-#passwordModalContent { background:#fff; padding:20px; border-radius:10px; width:300px; text-align:center; color:#000; }
+
+/* ✅ أيقونة الأدمن */
+#adminIcon {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  cursor: pointer;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+
+#passwordModal { 
+  display:none; 
+  position:fixed; 
+  top:0; left:0; 
+  width:100%; height:100%; 
+  background:rgba(0,0,0,0.7); 
+  justify-content:center; 
+  align-items:center; 
+}
+#passwordModalContent { 
+  background:#fff; 
+  padding:20px; 
+  border-radius:10px; 
+  width:300px; 
+  text-align:center; 
+  color:#000; 
+}
 </style>
 </head>
 <body>
+
+<!-- ✅ أيقونة الأدمن -->
 <img id="adminIcon" src="admin_icon.png" alt="أيقونة الأدمن" title="لوحة الأدمن">
 
 <div class="container">
@@ -169,7 +197,7 @@ function closePasswordModal(){ passwordModal.style.display='none'; document.getE
 
 function checkPassword(){
   const pass = document.getElementById('adminPassword').value;
-  if(pass==='joker2020'){ // الباسورد اللي تختاره
+  if(pass==='joker2020'){ // الباسورد
     passwordModal.style.display='none';
     document.getElementById('adminPanel').style.display='block';
     loadAdminPayments();
@@ -204,5 +232,3 @@ function deletePayment(id){ db.ref(`payments/${id}`).remove(); }
 </script>
 </body>
 </html>
-
-
