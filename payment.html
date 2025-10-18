@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>إرسال التحويل</title>
+<title>طرق الدفع والأدمن</title>
 <style>
 body {
   font-family: Tahoma, sans-serif;
@@ -11,45 +11,84 @@ body {
   text-align: center;
   margin: 0; padding: 0;
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   background: url('YOUR_BACKGROUND.jpg') center/cover no-repeat;
 }
-.box {
+.container {
+  width: 95%;
+  max-width: 500px;
+  margin: 20px auto;
   background: rgba(255,255,255,0.1);
   padding: 20px;
   border-radius: 15px;
-  width: 90%;
-  max-width: 400px;
   color: #fff;
 }
-input, button {
-  width: 90%; padding: 10px; margin: 10px 0; border-radius: 10px; border: none; font-size: 1em;
+.payment-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
 }
-button {
-  background-color: #28a745; color: white; cursor: pointer; transition: 0.2s;
+.payment-buttons button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border: 2px solid white;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 14px;
+  background: rgba(255,255,255,0.1);
+  transition: 0.2s;
+  color: white;
 }
-button:hover { background-color: #218838; }
-#loadingMsg { color:white; margin-top:10px; }
+.payment-buttons button:hover { transform: scale(1.05); background: rgba(255,255,255,0.2); }
+.payment-buttons img { width: 50px; height: 50px; margin-bottom: 10px; }
+input, button.send-btn { width: 90%; padding: 10px; margin: 10px 0; border-radius: 10px; border: none; font-size: 1em; }
+button.send-btn { background-color: #28a745; color: white; cursor: pointer; }
+button.send-btn:hover { background-color: #218838; }
+.payment-card { background: rgba(0,0,0,0.5); margin: 10px 0; padding: 10px; border-radius: 10px; }
+.payment-card img { max-width: 100%; margin: 10px 0; }
+button.confirm { background: #28a745; color: #fff; margin-right: 5px; }
+button.delete { background: #dc3545; color: #fff; }
+#paymentForm { display: none; }
+#loadingMsg { margin-top:10px; color:#fff; }
 </style>
 </head>
 <body>
 
-<div class="box">
-  <h2>إرسال التحويل</h2>
-  <p>طريقة الدفع: <span id="paymentMethod">...</span></p>
-  <input type="text" id="senderPhone" placeholder="رقم الهاتف المحول منه" required>
-  <input type="number" id="amount" placeholder="المبلغ المحول" required>
-  <input type="file" id="transferImage" accept="image/*">
-  <button onclick="submitPayment()">إرسال</button>
-  <p id="loadingMsg"></p>
+<div class="container">
+  <h2>طرق الدفع</h2>
+  <div class="payment-buttons">
+    <button onclick="openPayment('فودافون كاش')">
+      <img src="fcash_icon.png" alt="فودافون كاش">فودافون كاش
+    </button>
+    <button onclick="openPayment('Instapay')">
+      <img src="instapay_icon.png" alt="Instapay">Instapay
+    </button>
+  </div>
+
+  <!-- نموذج الدفع -->
+  <div id="paymentForm">
+    <h3>إرسال التحويل: <span id="selectedMethod"></span></h3>
+    <input type="text" id="senderPhone" placeholder="رقم الهاتف المحول منه">
+    <input type="number" id="amount" placeholder="المبلغ المحول">
+    <input type="file" id="transferImage" accept="image/*">
+    <button class="send-btn" onclick="submitPayment()">إرسال</button>
+    <p id="loadingMsg"></p>
+  </div>
+
+  <h2>طلبات الأدمن</h2>
+  <div id="paymentsContainer">
+    <p>جارٍ تحميل الطلبات...</p>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
+// إعداد Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDZQJZnekkDRf6jGIplVFlx0MckFR-xed8",
   authDomain: "ahmed-77878.firebaseapp.com",
@@ -62,25 +101,28 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const clientId = localStorage.getItem('clientId');
-const paymentMethod = localStorage.getItem('paymentMethod');
-document.getElementById('paymentMethod').innerText = paymentMethod;
+// فتح نموذج الدفع
+let selectedMethod = "";
+function openPayment(method) {
+  selectedMethod = method;
+  document.getElementById('selectedMethod').innerText = method;
+  document.getElementById('paymentForm').style.display = 'block';
+}
 
+// إرسال التحويل
 function submitPayment() {
   const senderPhone = document.getElementById('senderPhone').value.trim();
   const amount = parseFloat(document.getElementById('amount').value);
   const imageFile = document.getElementById('transferImage').files[0];
-
-  if (!senderPhone || !amount) return alert("ادخل جميع البيانات المطلوبة!");
+  if(!senderPhone || !amount) return alert("ادخل جميع البيانات المطلوبة!");
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function(e){
     const base64Image = imageFile ? e.target.result : null;
 
-    const paymentRef = db.ref(`payments`).push();
+    const paymentRef = db.ref('payments').push();
     paymentRef.set({
-      clientId,
-      method: paymentMethod,
+      method: selectedMethod,
       senderPhone,
       amount,
       date: new Date().toLocaleString(),
@@ -89,12 +131,41 @@ function submitPayment() {
     });
 
     document.getElementById('loadingMsg').innerText = "تم الإرسال!";
-    setTimeout(() => window.location.href = "client.html", 500);
+    setTimeout(()=>{ 
+      document.getElementById('paymentForm').style.display='none';
+      document.getElementById('loadingMsg').innerText = "";
+      document.getElementById('senderPhone').value="";
+      document.getElementById('amount').value="";
+      document.getElementById('transferImage').value="";
+    }, 500);
   };
-
   if(imageFile) reader.readAsDataURL(imageFile);
-  else reader.onload(); // إذا مفيش صورة
+  else reader.onload();
 }
+
+// تحميل الطلبات للأدمن
+const container = document.getElementById('paymentsContainer');
+db.ref('payments').on('value', snapshot=>{
+  container.innerHTML="";
+  if(!snapshot.exists()){ container.innerHTML="<p>لا يوجد طلبات حالياً</p>"; return; }
+  snapshot.forEach(child=>{
+    const p = child.val();
+    const card = document.createElement('div');
+    card.className = 'payment-card';
+    card.innerHTML = `
+      <p><strong>طريقة الدفع:</strong> ${p.method}</p>
+      <p><strong>رقم الهاتف:</strong> ${p.senderPhone}</p>
+      <p><strong>المبلغ:</strong> ${p.amount} جنيه</p>
+      ${p.imageBase64?`<img src="${p.imageBase64}" alt="صورة التحويل">`:''}
+      <button class="confirm" onclick="confirmPayment('${child.key}')">تأكيد</button>
+      <button class="delete" onclick="deletePayment('${child.key}')">حذف</button>
+    `;
+    container.appendChild(card);
+  });
+});
+
+function confirmPayment(id){ db.ref(`payments/${id}`).update({confirmed:true}); }
+function deletePayment(id){ db.ref(`payments/${id}`).remove(); }
 </script>
 </body>
 </html>
